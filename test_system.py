@@ -12,6 +12,7 @@ class TestSystem(unittest.TestCase):
         from system import false
         false(check = False)
         false(check = None)
+        false(check = ())
         self.assertRaises(CalledProcessError, false)
 
     def test_works(self):
