@@ -14,6 +14,7 @@ class TestSystem(unittest.TestCase):
         false(check = None)
         false(check = ())
         self.assertRaises(CalledProcessError, false)
+        self.assertRaises(CalledProcessError, lambda: false(check = 'x'))
 
     def test_works(self):
         from system import echo
