@@ -1,4 +1,4 @@
-from subprocess import PIPE, CalledProcessError
+from subprocess import CalledProcessError
 import unittest
 
 class TestSystem(unittest.TestCase):
@@ -18,6 +18,5 @@ class TestSystem(unittest.TestCase):
 
     def test_works(self):
         from system import echo
-        echo('Hello, world!')
-        echo('Hello,', 'world!')
-        print(echo('Hello, world!', stdout = PIPE).stdout)
+        echo.decode = True
+        self.assertEqual('Hello, world!\n', echo('Hello,', 'world!').stdout)

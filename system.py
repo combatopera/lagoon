@@ -12,12 +12,18 @@ class Program:
         for name, program in programs.items():
             setattr(module, name, program)
 
+    decode = False
+
     def __init__(self, path):
         self.path = path
 
     def __call__(self, *args, **kwargs):
         import subprocess
         kwargs.setdefault('check', True)
-        return subprocess.run([self.path] + list(args), **kwargs)
+        kwargs.setdefault('stdout', subprocess.PIPE)
+        completed = subprocess.run([self.path] + list(args), **kwargs)
+        if self.decode:
+            completed.stdout = completed.stdout.decode()
+        return completed
 
 Program.scan()
