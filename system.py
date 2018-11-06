@@ -15,8 +15,9 @@ class Program:
     def __init__(self, path):
         self.path = path
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         import subprocess
-        subprocess.run([self.path] + list(args), check = True)
+        kwargs.setdefault('check', True)
+        return subprocess.run([self.path] + list(args), **kwargs)
 
 Program.scan()
