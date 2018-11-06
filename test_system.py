@@ -10,12 +10,9 @@ class TestSystem(unittest.TestCase):
 
     def test_false(self):
         from system import false
-        self.assertRaises(CalledProcessError, false)
-
-    def test_false2(self):
-        from system import false
         false(check = False)
         false(check = None)
+        self.assertRaises(CalledProcessError, false)
 
     def test_works(self):
         from system import echo
