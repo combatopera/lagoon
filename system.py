@@ -22,9 +22,10 @@ class Program:
         import os, sys
         programs = {}
         for parent in os.environ['PATH'].split(os.pathsep):
-            for name in os.listdir(parent):
-                if name not in programs:
-                    programs[name] = cls(os.path.join(parent, name))
+            if os.path.exists(parent): # XXX: Also check is directory?
+                for name in os.listdir(parent):
+                    if name not in programs:
+                        programs[name] = cls(os.path.join(parent, name))
         module = sys.modules[__name__]
         for name, program in programs.items():
             setattr(module, name, program)
