@@ -22,7 +22,7 @@ class Program:
         import os, sys
         programs = {}
         for parent in os.environ['PATH'].split(os.pathsep):
-            if os.path.exists(parent): # XXX: Also check is directory?
+            if os.path.isdir(parent):
                 for name in os.listdir(parent):
                     if name not in programs:
                         programs[name] = cls(os.path.join(parent, name))
