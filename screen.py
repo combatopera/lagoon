@@ -16,10 +16,16 @@
 # along with system.  If not, see <http://www.gnu.org/licenses/>.
 
 from system import screen
+import re
 
+replpattern = re.compile(r'[$^\\]')
 limit = 756
 
+def _repl(m):
+    return r"\%s" % m.group()
+
 def stuff(session, window, text, eof = False):
+    text = replpattern.sub(_repl, text)
     if eof:
         text += '^D'
     for start in range(0, len(text), limit):
