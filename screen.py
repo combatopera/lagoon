@@ -18,19 +18,29 @@
 from system import screen
 import re
 
-replpattern = re.compile(r'[$^\\]')
-limit = 756
-
-def _repl(m):
-    return r"\%s" % m.group()
-
 def stuff(session, window, text):
-    text = replpattern.sub(_repl, text)
-    for start in range(0, len(text), limit):
-        _juststuff(session, window, text[start:start + limit])
+    Stuff(session, window)(text)
 
-def stuffeof(session, window):
-    _juststuff(session, window, '^D')
+class Stuff:
 
-def _juststuff(session, window, text):
-    screen('-S', session, '-p', window, '-X', 'stuff', text)
+    replpattern = re.compile(r'[$^\\]')
+    limit = 756
+
+    @staticmethod
+    def _repl(m):
+        return r"\%s" % m.group()
+
+    def __init__(self, session, window):
+        self.session = session
+        self.window = window
+
+    def __call__(self, text):
+        text = self.replpattern.sub(self._repl, text)
+        for start in range(0, len(text), self.limit):
+            self._juststuff(text[start:start + self.limit])
+
+    def eof(self):
+        self._juststuff('^D')
+
+    def _juststuff(self, text):
+        screen('-S', self.session, '-p', self.window, '-X', 'stuff', text)
