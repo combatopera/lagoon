@@ -17,6 +17,7 @@
 
 from screen import Stuff
 from pathlib import Path
+from contextlib import contextmanager
 import unittest, subprocess, tempfile
 
 stufftext = r'''plain old line
@@ -29,21 +30,26 @@ class TestScreen(unittest.TestCase):
 
     maxDiff = None
 
+    @contextmanager
+    def _session(self, dirpath):
+        dirpath = Path(dirpath)
+        session = dirpath.name
+        logpath = dirpath / 'log'
+        fifopath = dirpath / 'fifo'
+        subprocess.check_call(['mkfifo', str(fifopath)])
+        screen = subprocess.Popen([
+                'screen', '-S', session, '-L', str(logpath), '-d', '-m', 'cat', str(fifopath), '-'])
+        with fifopath.open('w') as f:
+            print('consume this', file = f)
+        stuff = Stuff(session, '0')
+        yield logpath, stuff
+        stuff.eof()
+        self.assertEqual(0, screen.wait())
+
     def test_escaping(self):
         with tempfile.TemporaryDirectory() as dirpath:
-            dirpath = Path(dirpath)
-            session = dirpath.name
-            logpath = dirpath / 'log'
-            fifopath = dirpath / 'fifo'
-            subprocess.check_call(['mkfifo', str(fifopath)])
-            screen = subprocess.Popen([
-                    'screen', '-S', session, '-L', str(logpath), '-d', '-m', 'cat', str(fifopath), '-'])
-            with fifopath.open('w') as f:
-                print('consume this', file = f)
-            stuff = Stuff(session, '0')
-            stuff(stufftext)
-            stuff.eof()
-            self.assertEqual(0, screen.wait())
+            with self._session(dirpath) as (logpath, stuff):
+                stuff(stufftext)
             expected = ['consume this'] + stufftext.splitlines() * 2
             with logpath.open() as f:
                 self.assertEqual(expected, f.read().splitlines())
