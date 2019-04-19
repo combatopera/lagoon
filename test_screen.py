@@ -36,9 +36,9 @@ class TestScreen(unittest.TestCase):
         session = dirpath.name
         logpath = dirpath / 'log'
         fifopath = dirpath / 'fifo'
+        command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
         subprocess.check_call(['mkfifo', str(fifopath)])
-        screen = subprocess.Popen([
-                'screen', '-S', session, '-L', str(logpath), '-d', '-m', 'cat', str(fifopath), '-'])
+        screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command)
         with fifopath.open('w') as f:
             print('consume this', file = f)
         stuff = Stuff(session, '0')
@@ -50,7 +50,7 @@ class TestScreen(unittest.TestCase):
         with tempfile.TemporaryDirectory() as dirpath:
             with self._session(dirpath) as (logpath, stuff):
                 stuff(stufftext)
-            expected = ['consume this'] + stufftext.splitlines() * 2
+            expected = ['consume this'] + stufftext.splitlines()
             with logpath.open() as f:
                 self.assertEqual(expected, f.read().splitlines())
 
