@@ -24,9 +24,13 @@ limit = 756
 def _repl(m):
     return r"\%s" % m.group()
 
-def stuff(session, window, text, eof = False):
+def stuff(session, window, text):
     text = replpattern.sub(_repl, text)
-    if eof:
-        text += '^D'
     for start in range(0, len(text), limit):
-        screen('-S', session, '-p', window, '-X', 'stuff', text[start:start + limit])
+        _juststuff(session, window, text[start:start + limit])
+
+def stuffeof(session, window):
+    _juststuff(session, window, '^D')
+
+def _juststuff(session, window, text):
+    screen('-S', session, '-p', window, '-X', 'stuff', text)

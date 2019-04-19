@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with system.  If not, see <http://www.gnu.org/licenses/>.
 
-from screen import stuff
+from screen import stuff, stuffeof
 from pathlib import Path
 import unittest, subprocess, tempfile
 
@@ -40,7 +40,8 @@ class TestScreen(unittest.TestCase):
                     'screen', '-S', session, '-L', str(logpath), '-d', '-m', 'cat', str(fifopath), '-'])
             with fifopath.open('w') as f:
                 print('consume this', file = f)
-            stuff(session, '0', stufftext, eof = True)
+            stuff(session, '0', stufftext)
+            stuffeof(session, '0')
             self.assertEqual(0, screen.wait())
             expected = ['consume this'] + stufftext.splitlines() * 2
             with logpath.open() as f:
