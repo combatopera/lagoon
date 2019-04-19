@@ -24,23 +24,27 @@ def stuff(session, window, text):
 class Stuff:
 
     replpattern = re.compile(r'[$^\\]')
-    limit = 756
+    buffersize = 756
 
     @staticmethod
     def _repl(m):
         return r"\%s" % m.group()
+
+    @classmethod
+    def todata(cls, text):
+        return cls.replpattern.sub(cls._repl, text).encode()
 
     def __init__(self, session, window):
         self.session = session
         self.window = window
 
     def __call__(self, text):
-        text = self.replpattern.sub(self._repl, text)
-        for start in range(0, len(text), self.limit):
-            self._juststuff(text[start:start + self.limit])
+        data = self.todata(text)
+        for start in range(0, len(data), self.buffersize):
+            self._juststuff(data[start:start + self.buffersize])
 
     def eof(self):
         self._juststuff('^D')
 
-    def _juststuff(self, text):
-        screen('-S', self.session, '-p', self.window, '-X', 'stuff', text)
+    def _juststuff(self, data):
+        screen('-S', self.session, '-p', self.window, '-X', 'stuff', data)

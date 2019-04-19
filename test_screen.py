@@ -20,11 +20,16 @@ from pathlib import Path
 from contextlib import contextmanager
 import unittest, subprocess, tempfile
 
-stufftext = r'''plain old line
+stufftemplate = r'''plain old line
 do not interpolate any of these: $USER ${USER} '$USER' '${USER}' x
 none of these are tab: ^I \t '^I' '\t' x
 some interesting cases: $ ^ \ '$' '^' '\' x
 '''
+stufftemplate += """bit of unicode: \u20ac x
+arbitrary text: %s x
+"""
+basestufftext = stufftemplate % ''
+basesize = len(Stuff.todata(basestufftext))
 
 class TestScreen(unittest.TestCase):
 
@@ -46,13 +51,24 @@ class TestScreen(unittest.TestCase):
         stuff.eof()
         self.assertEqual(0, screen.wait())
 
+    def setUp(self):
+        self.expected = ['consume this']
+
     def test_escaping(self):
         with tempfile.TemporaryDirectory() as dirpath:
             with self._session(dirpath) as (logpath, stuff):
-                stuff(stufftext)
-            expected = ['consume this'] + stufftext.splitlines()
+                stuff(basestufftext)
+                self.expected += basestufftext.splitlines()
             with logpath.open() as f:
-                self.assertEqual(expected, f.read().splitlines())
+                self.assertEqual(self.expected, f.read().splitlines())
 
     def test_largetext(self):
-        pass # TODO: Implement me.
+        with tempfile.TemporaryDirectory() as dirpath:
+            with self._session(dirpath) as (logpath, stuff):
+                for mul in 1, 2:
+                    for extra in 0, 1:
+                        stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))
+                        stuff(stufftext)
+                        self.expected += stufftext.splitlines()
+            with logpath.open() as f:
+                self.assertEqual(self.expected, f.read().splitlines())
