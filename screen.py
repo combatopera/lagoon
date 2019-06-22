@@ -21,9 +21,6 @@ import re, os
 def screenenv(doublequotekey):
     return {**os.environ, doublequotekey: '"'}
 
-def stuff(session, window, text):
-    Stuff(session, window)(text)
-
 class Stuff:
 
     replpattern = re.compile(r'[$^\\"]')
