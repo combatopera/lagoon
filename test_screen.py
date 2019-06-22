@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with system.  If not, see <http://www.gnu.org/licenses/>.
 
-from screen import Stuff
+from screen import Stuff, screenenv
 from pathlib import Path
 from contextlib import contextmanager
 import unittest, subprocess, tempfile
@@ -26,10 +26,10 @@ none of these are tab: ^I \t '^I' '\t' x
 some interesting cases: $ ^ \ '$' '^' '\' x
 '''
 stufftemplate += """bit of unicode: \u20ac x
+double quote against letter: "Z x
 arbitrary text: %s x
 """
 basestufftext = stufftemplate % ''
-basesize = len(Stuff.todata(basestufftext))
 
 class TestScreen(unittest.TestCase):
 
@@ -43,10 +43,10 @@ class TestScreen(unittest.TestCase):
         fifopath = dirpath / 'fifo'
         command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
         subprocess.check_call(['mkfifo', str(fifopath)])
-        screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command)
+        screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command, env = screenenv('DUB_QUO'))
         with fifopath.open('w') as f:
             print('consume this', file = f)
-        stuff = Stuff(session, '0')
+        stuff = Stuff(session, '0', 'DUB_QUO')
         yield logpath, stuff
         stuff.eof()
         self.assertEqual(0, screen.wait())
@@ -65,6 +65,7 @@ class TestScreen(unittest.TestCase):
     def test_largetext(self):
         with tempfile.TemporaryDirectory() as dirpath:
             with self._session(dirpath) as (logpath, stuff):
+                basesize = len(stuff.todata(basestufftext))
                 for mul in 1, 2:
                     for extra in 0, 1:
                         stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))

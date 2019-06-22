@@ -16,27 +16,30 @@
 # along with system.  If not, see <http://www.gnu.org/licenses/>.
 
 from system import screen
-import re
+import re, os
+
+def screenenv(doublequotekey):
+    return {**os.environ, doublequotekey: '"'}
 
 def stuff(session, window, text):
     Stuff(session, window)(text)
 
 class Stuff:
 
-    replpattern = re.compile(r'[$^\\]')
+    replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
-    @staticmethod
-    def _repl(m):
-        return r"\%s" % m.group()
+    def _repl(self, m):
+        char = m.group()
+        return self.doublequoteexpr if '"' == char else r"\%s" % char
 
-    @classmethod
-    def todata(cls, text):
-        return cls.replpattern.sub(cls._repl, text).encode()
+    def todata(self, text):
+        return self.replpattern.sub(self._repl, text).encode()
 
-    def __init__(self, session, window):
+    def __init__(self, session, window, doublequotekey):
         self.session = session
         self.window = window
+        self.doublequoteexpr = "${%s}" % doublequotekey
 
     def __call__(self, text):
         data = self.todata(text)
