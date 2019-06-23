@@ -83,7 +83,8 @@ class TestScreen(unittest.TestCase):
     def test_printable(self):
         # The char just before space actually seems fine but we don't enforce that:
         printable = ''.join(chr(x) for x in range(ord(' '), ord('~') + 1))
-        self.assertEqual(95, len(printable))
+        printable += ''.join(chr(x) for x in range(0xa0, 0x100))
+        self.assertEqual(95 + 96, len(printable))
         while len(printable) <= Stuff.buffersize:
             printable *= 2
         with self._session() as (logpath, stuff):
