@@ -36,11 +36,10 @@ class TestScreen(unittest.TestCase):
     maxDiff = None
 
     @contextmanager
-    def _session(self, dirpath):
-        dirpath = Path(dirpath)
-        session = dirpath.name
-        logpath = dirpath / 'log'
-        fifopath = dirpath / 'fifo'
+    def _session(self):
+        session = self.dirpath.name
+        logpath = self.dirpath / 'log'
+        fifopath = self.dirpath / 'fifo'
         command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
         subprocess.check_call(['mkfifo', str(fifopath)])
         screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command, env = screenenv('DUB_QUO'))
@@ -53,23 +52,26 @@ class TestScreen(unittest.TestCase):
 
     def setUp(self):
         self.expected = ['consume this']
+        self._tempdir = tempfile.TemporaryDirectory()
+        self.dirpath = Path(self._tempdir.name)
+
+    def tearDown(self):
+        self._tempdir.cleanup()
 
     def test_escaping(self):
-        with tempfile.TemporaryDirectory() as dirpath:
-            with self._session(dirpath) as (logpath, stuff):
-                stuff(basestufftext)
-                self.expected += basestufftext.splitlines()
-            with logpath.open() as f:
-                self.assertEqual(self.expected, f.read().splitlines())
+        with self._session() as (logpath, stuff):
+            stuff(basestufftext)
+            self.expected += basestufftext.splitlines()
+        with logpath.open() as f:
+            self.assertEqual(self.expected, f.read().splitlines())
 
     def test_largetext(self):
-        with tempfile.TemporaryDirectory() as dirpath:
-            with self._session(dirpath) as (logpath, stuff):
-                basesize = len(stuff.todata(basestufftext))
-                for mul in 1, 2:
-                    for extra in 0, 1:
-                        stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))
-                        stuff(stufftext)
-                        self.expected += stufftext.splitlines()
-            with logpath.open() as f:
-                self.assertEqual(self.expected, f.read().splitlines())
+        with self._session() as (logpath, stuff):
+            basesize = len(stuff.todata(basestufftext))
+            for mul in 1, 2:
+                for extra in 0, 1:
+                    stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))
+                    stuff(stufftext)
+                    self.expected += stufftext.splitlines()
+        with logpath.open() as f:
+            self.assertEqual(self.expected, f.read().splitlines())
