@@ -31,18 +31,18 @@ class Stuff:
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
-    def toatoms(self, text):
-        atoms = []
+    def toparts(self, text):
+        parts = []
         def byteatoms(text):
-            atoms.extend(self.Part(c) for c in text)
+            parts.extend(self.Part(c) for c in text)
         mark = 0
         for m in self.replpattern.finditer(text):
             byteatoms(text[mark:m.start()])
             char = m.group()
-            atoms.append(self.doublequotepart if '"' == char else self.Part(r"\%s" % char))
+            parts.append(self.doublequotepart if '"' == char else self.Part(r"\%s" % char))
             mark = m.end()
         byteatoms(text[mark:])
-        return atoms
+        return parts
 
     def __init__(self, session, window, doublequotekey):
         self.session = session
@@ -50,18 +50,18 @@ class Stuff:
         self.doublequotepart = self.Part("${%s}" % doublequotekey)
 
     def __call__(self, text):
-        atoms = self.toatoms(text)
+        parts = self.toparts(text)
         j = 0
-        while j < len(atoms):
+        while j < len(parts):
             i = j
             maxsize = self.buffersize
-            while j < len(atoms):
-                atomlen = len(atoms[j].data)
+            while j < len(parts):
+                atomlen = len(parts[j].data)
                 if atomlen > maxsize:
                     break
                 maxsize -= atomlen
                 j += 1
-            self._juststuff(b''.join(a.data for a in atoms[i:j]))
+            self._juststuff(b''.join(part.data for part in parts[i:j]))
 
     def eof(self):
         self._juststuff('^D')

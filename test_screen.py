@@ -67,7 +67,7 @@ class TestScreen(unittest.TestCase):
 
     def test_largetext(self):
         with self._session() as (logpath, stuff):
-            basesize = sum(len(a.data) for a in stuff.toatoms(basestufftext))
+            basesize = sum(len(part.data) for part in stuff.toparts(basestufftext))
             for mul in 1, 2:
                 for extra in 0, 1:
                     stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))
