@@ -53,12 +53,12 @@ class Stuff:
         j = 0
         while j < len(atoms):
             i = j
-            chunksize = 0
+            maxsize = self.buffersize
             while j < len(atoms):
                 atomlen = len(atoms[j])
-                if chunksize + atomlen > self.buffersize:
+                if atomlen > maxsize:
                     break
-                chunksize += atomlen
+                maxsize -= atomlen
                 j += 1
             self._juststuff(b''.join(atoms[i:j]))
 
