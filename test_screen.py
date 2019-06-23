@@ -77,6 +77,8 @@ class TestScreen(unittest.TestCase):
     def test_printable(self):
         printable = ''.join(chr(x) for x in range(ord(' '), ord('~') + 1))
         self.assertEqual(95, len(printable))
+        while len(printable) <= Stuff.buffersize:
+            printable *= 2
         with self._session() as (logpath, stuff):
             stuff(printable)
             self.expected.append(printable)
