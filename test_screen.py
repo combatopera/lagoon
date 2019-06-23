@@ -81,6 +81,7 @@ class TestScreen(unittest.TestCase):
             self.expected.append(text)
 
     def test_printable(self):
+        # The char just before space actually seems fine but we don't enforce that:
         printable = ''.join(chr(x) for x in range(ord(' '), ord('~') + 1))
         self.assertEqual(95, len(printable))
         while len(printable) <= Stuff.buffersize:
