@@ -28,44 +28,46 @@ class Stuff:
         def __init__(self, text):
             self.data = text.encode()
 
-    class Atom(Part): pass
+        def consume(self, chunk, maxsize):
+            if len(self.data) <= maxsize:
+                chunk.append(self.data)
+                return True
 
-    class Text(Part): pass
+    class Text(Part):
+
+        def consume(self, chunk, maxsize):
+            if super().consume(chunk, maxsize):
+                return True
+            chunk.append(self.data[:maxsize])
+            self.data = self.data[maxsize:]
 
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
     def toparts(self, text):
-        parts = []
-        def byteatoms(text):
-            parts.extend(self.Text(c) for c in text)
         mark = 0
         for m in self.replpattern.finditer(text):
-            byteatoms(text[mark:m.start()])
+            yield self.Text(text[mark:m.start()])
             char = m.group()
-            parts.append(self.doublequoteatom if '"' == char else self.Atom(r"\%s" % char))
+            yield self.doublequoteatom if '"' == char else self.Part(r"\%s" % char)
             mark = m.end()
-        byteatoms(text[mark:])
-        return parts
+        yield self.Text(text[mark:])
 
     def __init__(self, session, window, doublequotekey):
         self.session = session
         self.window = window
-        self.doublequoteatom = self.Atom("${%s}" % doublequotekey)
+        self.doublequoteatom = self.Part("${%s}" % doublequotekey)
 
     def __call__(self, text):
-        parts = self.toparts(text)
-        j = 0
-        while j < len(parts):
-            i = j
+        parts = list(self.toparts(text))
+        k = 0
+        while k < len(parts):
             maxsize = self.buffersize
-            while j < len(parts):
-                atomlen = len(parts[j].data)
-                if atomlen > maxsize:
-                    break
-                maxsize -= atomlen
-                j += 1
-            self._juststuff(b''.join(part.data for part in parts[i:j]))
+            chunk = []
+            while k < len(parts) and parts[k].consume(chunk, maxsize):
+                maxsize -= len(chunk[-1])
+                k += 1
+            self._juststuff(b''.join(chunk))
 
     def eof(self):
         self._juststuff('^D')
