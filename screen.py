@@ -26,10 +26,6 @@ class Stuff:
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
-    def _repl(self, m):
-        char = m.group()
-        return self.doublequoteexpr if '"' == char else r"\%s" % char
-
     def toatoms(self, text):
         atoms = []
         def byteatoms(characterstring):
@@ -38,7 +34,8 @@ class Stuff:
         mark = 0
         for m in self.replpattern.finditer(text):
             byteatoms(text[mark:m.start()])
-            atoms.append(self._repl(m).encode())
+            char = m.group()
+            atoms.append(self.doublequoteexpr if '"' == char else (r"\%s" % char).encode())
             mark = m.end()
         byteatoms(text[mark:])
         return atoms
@@ -46,7 +43,7 @@ class Stuff:
     def __init__(self, session, window, doublequotekey):
         self.session = session
         self.window = window
-        self.doublequoteexpr = "${%s}" % doublequotekey
+        self.doublequoteexpr = ("${%s}" % doublequotekey).encode()
 
     def __call__(self, text):
         atoms = self.toatoms(text)
