@@ -23,10 +23,6 @@ def screenenv(doublequotekey):
 
 class Stuff:
 
-    @staticmethod
-    def _bytechars(s):
-        return (s[i:i + 1] for i in range(len(s)))
-
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
@@ -36,12 +32,15 @@ class Stuff:
 
     def toatoms(self, text):
         atoms = []
+        def chars(text):
+            s = text.encode()
+            atoms.extend(s[i:i + 1] for i in range(len(s)))
         mark = 0
         for m in self.replpattern.finditer(text):
-            atoms.extend(self._bytechars(text[mark:m.start()].encode()))
+            chars(text[mark:m.start()])
             atoms.append(self._repl(m).encode())
             mark = m.end()
-        atoms.extend(self._bytechars(text[mark:].encode()))
+        chars(text[mark:])
         return atoms
 
     def __init__(self, session, window, doublequotekey):
@@ -54,9 +53,9 @@ class Stuff:
         j = 0
         while j < len(atoms):
             i = j
-            n = 0
-            while j < len(atoms) and n + len(atoms[j]) < self.buffersize:
-                n += len(atoms[j])
+            chunksize = 0
+            while j < len(atoms) and chunksize + len(atoms[j]) < self.buffersize:
+                chunksize += len(atoms[j])
                 j += 1
             self._juststuff(b''.join(atoms[i:j]))
 
