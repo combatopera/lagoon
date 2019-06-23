@@ -32,15 +32,15 @@ class Stuff:
 
     def toatoms(self, text):
         atoms = []
-        def chars(text):
-            s = text.encode()
-            atoms.extend(s[i:i + 1] for i in range(len(s)))
+        def byteatoms(characterstring):
+            binary = characterstring.encode()
+            atoms.extend(binary[i:i + 1] for i in range(len(binary)))
         mark = 0
         for m in self.replpattern.finditer(text):
-            chars(text[mark:m.start()])
+            byteatoms(text[mark:m.start()])
             atoms.append(self._repl(m).encode())
             mark = m.end()
-        chars(text[mark:])
+        byteatoms(text[mark:])
         return atoms
 
     def __init__(self, session, window, doublequotekey):
