@@ -23,19 +23,23 @@ def screenenv(doublequotekey):
 
 class Stuff:
 
+    class Part:
+
+        def __init__(self, text):
+            self.data = text.encode()
+
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
     def toatoms(self, text):
         atoms = []
-        def byteatoms(characterstring):
-            binary = characterstring.encode()
-            atoms.extend(binary[i:i + 1] for i in range(len(binary)))
+        def byteatoms(text):
+            atoms.extend(self.Part(c) for c in text)
         mark = 0
         for m in self.replpattern.finditer(text):
             byteatoms(text[mark:m.start()])
             char = m.group()
-            atoms.append(self.doublequoteexpr if '"' == char else (r"\%s" % char).encode())
+            atoms.append(self.doublequotepart if '"' == char else self.Part(r"\%s" % char))
             mark = m.end()
         byteatoms(text[mark:])
         return atoms
@@ -43,7 +47,7 @@ class Stuff:
     def __init__(self, session, window, doublequotekey):
         self.session = session
         self.window = window
-        self.doublequoteexpr = ("${%s}" % doublequotekey).encode()
+        self.doublequotepart = self.Part("${%s}" % doublequotekey)
 
     def __call__(self, text):
         atoms = self.toatoms(text)
@@ -52,12 +56,12 @@ class Stuff:
             i = j
             maxsize = self.buffersize
             while j < len(atoms):
-                atomlen = len(atoms[j])
+                atomlen = len(atoms[j].data)
                 if atomlen > maxsize:
                     break
                 maxsize -= atomlen
                 j += 1
-            self._juststuff(b''.join(atoms[i:j]))
+            self._juststuff(b''.join(a.data for a in atoms[i:j]))
 
     def eof(self):
         self._juststuff('^D')
