@@ -73,3 +73,10 @@ class TestScreen(unittest.TestCase):
                     stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))
                     stuff(stufftext)
                     self.expected += stufftext.splitlines()
+
+    def test_printable(self):
+        printable = ''.join(chr(x) for x in range(ord(' '), ord('~') + 1))
+        self.assertEqual(95, len(printable))
+        with self._session() as (logpath, stuff):
+            stuff(printable)
+            self.expected.append(printable)
