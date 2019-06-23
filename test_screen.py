@@ -74,6 +74,12 @@ class TestScreen(unittest.TestCase):
                     stuff(stufftext)
                     self.expected += stufftext.splitlines()
 
+    def test_splitescapesequence(self):
+        text = 'x' * (Stuff.buffersize - 1) + '$'
+        with self._session() as (logpath, stuff):
+            stuff(text)
+            self.expected.append(text)
+
     def test_printable(self):
         printable = ''.join(chr(x) for x in range(ord(' '), ord('~') + 1))
         self.assertEqual(95, len(printable))
