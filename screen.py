@@ -28,18 +28,22 @@ class Stuff:
         def __init__(self, text):
             self.data = text.encode()
 
+    class Atom(Part): pass
+
+    class Text(Part): pass
+
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
     def toparts(self, text):
         parts = []
         def byteatoms(text):
-            parts.extend(self.Part(c) for c in text)
+            parts.extend(self.Text(c) for c in text)
         mark = 0
         for m in self.replpattern.finditer(text):
             byteatoms(text[mark:m.start()])
             char = m.group()
-            parts.append(self.doublequotepart if '"' == char else self.Part(r"\%s" % char))
+            parts.append(self.doublequoteatom if '"' == char else self.Atom(r"\%s" % char))
             mark = m.end()
         byteatoms(text[mark:])
         return parts
@@ -47,7 +51,7 @@ class Stuff:
     def __init__(self, session, window, doublequotekey):
         self.session = session
         self.window = window
-        self.doublequotepart = self.Part("${%s}" % doublequotekey)
+        self.doublequoteatom = self.Atom("${%s}" % doublequotekey)
 
     def __call__(self, text):
         parts = self.toparts(text)
