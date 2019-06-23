@@ -23,6 +23,10 @@ def screenenv(doublequotekey):
 
 class Stuff:
 
+    @staticmethod
+    def _bytechars(s):
+        return (s[i:i + 1] for i in range(len(s)))
+
     replpattern = re.compile(r'[$^\\"]')
     buffersize = 756
 
@@ -30,8 +34,15 @@ class Stuff:
         char = m.group()
         return self.doublequoteexpr if '"' == char else r"\%s" % char
 
-    def todata(self, text):
-        return self.replpattern.sub(self._repl, text).encode()
+    def toatoms(self, text):
+        atoms = []
+        mark = 0
+        for m in self.replpattern.finditer(text):
+            atoms.extend(self._bytechars(text[mark:m.start()].encode()))
+            atoms.append(self._repl(m).encode())
+            mark = m.end()
+        atoms.extend(self._bytechars(text[mark:].encode()))
+        return atoms
 
     def __init__(self, session, window, doublequotekey):
         self.session = session
@@ -39,9 +50,15 @@ class Stuff:
         self.doublequoteexpr = "${%s}" % doublequotekey
 
     def __call__(self, text):
-        data = self.todata(text)
-        for start in range(0, len(data), self.buffersize):
-            self._juststuff(data[start:start + self.buffersize])
+        atoms = self.toatoms(text)
+        j = 0
+        while j < len(atoms):
+            i = j
+            n = 0
+            while j < len(atoms) and n + len(atoms[j]) < self.buffersize:
+                n += len(atoms[j])
+                j += 1
+            self._juststuff(b''.join(atoms[i:j]))
 
     def eof(self):
         self._juststuff('^D')
