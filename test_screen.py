@@ -49,6 +49,8 @@ class TestScreen(unittest.TestCase):
         yield logpath, stuff
         stuff.eof()
         self.assertEqual(0, screen.wait())
+        with logpath.open() as f:
+            self.assertEqual(self.expected, f.read().splitlines())
 
     def setUp(self):
         self.expected = ['consume this']
@@ -62,8 +64,6 @@ class TestScreen(unittest.TestCase):
         with self._session() as (logpath, stuff):
             stuff(basestufftext)
             self.expected += basestufftext.splitlines()
-        with logpath.open() as f:
-            self.assertEqual(self.expected, f.read().splitlines())
 
     def test_largetext(self):
         with self._session() as (logpath, stuff):
@@ -73,5 +73,3 @@ class TestScreen(unittest.TestCase):
                     stufftext = stufftemplate % ('A' * (Stuff.buffersize * mul + extra - basesize))
                     stuff(stufftext)
                     self.expected += stufftext.splitlines()
-        with logpath.open() as f:
-            self.assertEqual(self.expected, f.read().splitlines())
