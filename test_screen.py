@@ -74,7 +74,7 @@ class TestScreen(unittest.TestCase):
                     stuff(stufftext)
                     self.expected += stufftext.splitlines()
 
-    def test_splitescapesequence(self):
+    def test_atomicescape(self):
         text = 'x' * (Stuff.buffersize - 1) + '$'
         with self._session() as (logpath, stuff):
             stuff(text)
