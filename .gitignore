@@ -1,1 +1,7 @@
+#gclean
 *.pyc
+/build/
+/dist/
+/setup.cfg
+/setup.py
+/system.egg-info/
