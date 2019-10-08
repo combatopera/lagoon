@@ -69,6 +69,9 @@ class Stuff:
                 k += 1
             self._juststuff(b''.join(chunk))
 
+    def interrupt(self):
+        self._juststuff('^C')
+
     def eof(self):
         self._juststuff('^D')
 
