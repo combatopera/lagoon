@@ -17,6 +17,10 @@
 
 class Program:
 
+    @staticmethod
+    def _strorbytes(arg):
+        return arg if isinstance(arg, str) or isinstance(arg, bytes) else str(arg)
+
     @classmethod
     def scan(cls):
         import os, sys
@@ -39,7 +43,7 @@ class Program:
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
-        completed = subprocess.run(list(itertools.chain([self.path], map(str, args))), **kwargs)
+        completed = subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
         if self.decode:
             completed.stdout = completed.stdout.decode()
         return completed
