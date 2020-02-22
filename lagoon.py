@@ -36,13 +36,16 @@ class Program:
         self.path = path
 
     def __call__(self, *args, **kwargs):
-        import subprocess
+        import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
-        completed = subprocess.run([self.path] + list(args), **kwargs)
+        completed = subprocess.run(list(itertools.chain([self.path], map(str, args))), **kwargs)
         if self.decode:
             completed.stdout = completed.stdout.decode()
         return completed
+
+    def print(self, *args, **kwargs):
+        return self(*args, **kwargs, stdout = None)
 
     def exec(self, *args):
         import os
