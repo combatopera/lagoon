@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from pathlib import Path
 from subprocess import CalledProcessError
-import unittest
+import os, unittest
 
 class TestLagoon(unittest.TestCase):
 
@@ -39,3 +40,7 @@ class TestLagoon(unittest.TestCase):
         self.assertEqual(b'Hello, world!\n', echo('Hello,', 'world!').stdout)
         from .text import echo
         self.assertEqual('Hello, world!\n', echo('Hello,', 'world!').stdout)
+
+    def test_stringify(self):
+        from .text import echo
+        self.assertEqual(f"text binary 100 eranu{os.sep}uvavu\n", echo('text', b'binary', 100, Path('eranu', 'uvavu')).stdout)

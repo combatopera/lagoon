@@ -19,7 +19,7 @@ class Program:
 
     @staticmethod
     def _strorbytes(arg):
-        return arg if isinstance(arg, str) or isinstance(arg, bytes) else str(arg)
+        return arg if isinstance(arg, bytes) else str(arg)
 
     @classmethod
     def scan(cls):
