@@ -43,6 +43,7 @@ class Program:
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
+        # TODO: Simply return stdout if there is nothing else of interest.
         return subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
 
     def print(self, *args, **kwargs):
