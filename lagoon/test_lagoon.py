@@ -22,12 +22,12 @@ class TestLagoon(unittest.TestCase):
 
     def test_nosuchprogram(self):
         def imp():
-            from lagoon import thisisnotanexecutable
+            from . import thisisnotanexecutable
             del thisisnotanexecutable
         self.assertRaises(ImportError, imp)
 
     def test_false(self):
-        from lagoon import false
+        from . import false
         false(check = False)
         false(check = None)
         false(check = ())
@@ -35,6 +35,7 @@ class TestLagoon(unittest.TestCase):
         self.assertRaises(CalledProcessError, lambda: false(check = 'x'))
 
     def test_works(self):
-        from lagoon import echo
-        echo.decode = True
+        from . import echo
+        self.assertEqual(b'Hello, world!\n', echo('Hello,', 'world!').stdout)
+        from .text import echo
         self.assertEqual('Hello, world!\n', echo('Hello,', 'world!').stdout)

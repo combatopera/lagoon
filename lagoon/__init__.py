@@ -23,6 +23,7 @@ class Program:
 
     @classmethod
     def scan(cls):
+        from . import text
         import os, sys
         programs = {}
         for parent in os.environ['PATH'].split(os.pathsep):
@@ -33,8 +34,7 @@ class Program:
         module = sys.modules[__name__]
         for name, program in programs.items():
             setattr(module, name, program)
-
-    decode = False
+            setattr(text, name, text.TextProgram(program.path))
 
     def __init__(self, path):
         self.path = path
@@ -43,10 +43,7 @@ class Program:
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
-        completed = subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
-        if self.decode:
-            completed.stdout = completed.stdout.decode()
-        return completed
+        return subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
 
     def print(self, *args, **kwargs):
         return self(*args, **kwargs, stdout = None)
