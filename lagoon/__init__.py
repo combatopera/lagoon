@@ -54,10 +54,23 @@ class Program:
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
+        kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
         kwargs['cwd'] = self._resolve(kwargs['cwd']) if 'cwd' in kwargs else self.cwd
-        # TODO: Simply return stdout if there is nothing else of interest.
-        return subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
+        completed = subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
+        fields = set()
+        if not kwargs['check']:
+            fields.add('returncode')
+        if kwargs['stdout'] == subprocess.PIPE:
+            fields.add('stdout')
+        if kwargs['stderr'] == subprocess.PIPE:
+            fields.add('stderr')
+        if fields:
+            try:
+                field, = fields
+            except ValueError:
+                return completed
+            return getattr(completed, field)
 
     def print(self, *args, **kwargs):
         return self(*args, **kwargs, stdout = None)

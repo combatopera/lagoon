@@ -16,8 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
-from subprocess import CalledProcessError
-import os, unittest
+import os, subprocess, unittest
 
 class TestLagoon(unittest.TestCase):
 
@@ -32,33 +31,50 @@ class TestLagoon(unittest.TestCase):
         false(check = False)
         false(check = None)
         false(check = ())
-        self.assertRaises(CalledProcessError, false)
-        self.assertRaises(CalledProcessError, lambda: false(check = 'x'))
+        self.assertRaises(subprocess.CalledProcessError, false)
+        self.assertRaises(subprocess.CalledProcessError, lambda: false(check = 'x'))
 
     def test_works(self):
         from . import echo
-        self.assertEqual(b'Hello, world!\n', echo('Hello,', 'world!').stdout)
+        self.assertEqual(b'Hello, world!\n', echo('Hello,', 'world!'))
         from .text import echo
-        self.assertEqual('Hello, world!\n', echo('Hello,', 'world!').stdout)
+        self.assertEqual('Hello, world!\n', echo('Hello,', 'world!'))
 
     def test_stringify(self):
         from .text import echo
-        self.assertEqual(f"text binary 100 eranu{os.sep}uvavu\n", echo('text', b'binary', 100, Path('eranu', 'uvavu')).stdout)
+        self.assertEqual(f"text binary 100 eranu{os.sep}uvavu\n", echo('text', b'binary', 100, Path('eranu', 'uvavu')))
 
     def test_cd(self):
         from .text import pwd
-        self.assertEqual(f"{Path.cwd()}\n", pwd().stdout)
-        self.assertEqual(f"{Path.cwd()}\n", pwd(cwd = '.').stdout)
-        self.assertEqual('/tmp\n', pwd(cwd = '/tmp').stdout)
+        self.assertEqual(f"{Path.cwd()}\n", pwd())
+        self.assertEqual(f"{Path.cwd()}\n", pwd(cwd = '.'))
+        self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
         pwd = pwd.cd('/usr')
-        self.assertEqual('/usr\n', pwd().stdout)
-        self.assertEqual('/usr\n', pwd(cwd = '.').stdout)
-        self.assertEqual('/usr/bin\n', pwd(cwd = 'bin').stdout)
-        self.assertEqual('/\n', pwd(cwd = '..').stdout)
-        self.assertEqual('/tmp\n', pwd(cwd = '/tmp').stdout)
+        self.assertEqual('/usr\n', pwd())
+        self.assertEqual('/usr\n', pwd(cwd = '.'))
+        self.assertEqual('/usr/bin\n', pwd(cwd = 'bin'))
+        self.assertEqual('/\n', pwd(cwd = '..'))
+        self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
         pwd = pwd.cd('local')
-        self.assertEqual('/usr/local\n', pwd().stdout)
-        self.assertEqual('/usr/local\n', pwd(cwd = '.').stdout)
-        self.assertEqual('/usr/local/bin\n', pwd(cwd = 'bin').stdout)
-        self.assertEqual('/usr\n', pwd(cwd = '..').stdout)
-        self.assertEqual('/tmp\n', pwd(cwd = '/tmp').stdout)
+        self.assertEqual('/usr/local\n', pwd())
+        self.assertEqual('/usr/local\n', pwd(cwd = '.'))
+        self.assertEqual('/usr/local/bin\n', pwd(cwd = 'bin'))
+        self.assertEqual('/usr\n', pwd(cwd = '..'))
+        self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
+
+    def test_resultobj(self):
+        from .text import false, true
+        # If we don't check, we need the returncode:
+        self.assertEqual(1, false(check = False).returncode)
+        self.assertEqual(0, true(check = False).returncode)
+        self.assertEqual(1, false.print(check = False))
+        self.assertEqual(0, true.print(check = False))
+        # Just stdout:
+        self.assertEqual('', true())
+        self.assertEqual('', true(stderr = subprocess.STDOUT)) # Capture both streams in stdout field.
+        # Capture stderr:
+        self.assertEqual('', true(stderr = subprocess.PIPE).stderr)
+        self.assertEqual('', true.print(stderr = subprocess.PIPE))
+        # Simply return None if there are no fields of interest:
+        self.assertEqual(None, true.print())
+        self.assertEqual(None, true.print(stderr = subprocess.STDOUT)) # Both streams printed on stdout.
