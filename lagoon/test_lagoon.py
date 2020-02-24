@@ -35,17 +35,17 @@ class TestLagoon(unittest.TestCase):
         self.assertRaises(subprocess.CalledProcessError, lambda: false(check = 'x'))
 
     def test_works(self):
-        from . import echo
+        from .binary import echo
         self.assertEqual(b'Hello, world!\n', echo('Hello,', 'world!'))
-        from .text import echo
+        from . import echo
         self.assertEqual('Hello, world!\n', echo('Hello,', 'world!'))
 
     def test_stringify(self):
-        from .text import echo
+        from . import echo
         self.assertEqual(f"text binary 100 eranu{os.sep}uvavu\n", echo('text', b'binary', 100, Path('eranu', 'uvavu')))
 
     def test_cd(self):
-        from .text import pwd
+        from . import pwd
         self.assertEqual(f"{Path.cwd()}\n", pwd())
         self.assertEqual(f"{Path.cwd()}\n", pwd(cwd = '.'))
         self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
@@ -63,7 +63,7 @@ class TestLagoon(unittest.TestCase):
         self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
 
     def test_resultobj(self):
-        from .text import false, true
+        from . import false, true
         # If we don't check, we need the returncode:
         self.assertEqual(1, false(check = False).returncode)
         self.assertEqual(0, true(check = False).returncode)

@@ -23,8 +23,7 @@ class Program:
 
     @classmethod
     def scan(cls):
-        # TODO: Text mode should be the default.
-        from . import text
+        from . import binary
         import os, sys
         programs = {}
         for parent in os.environ['PATH'].split(os.pathsep):
@@ -35,8 +34,8 @@ class Program:
         module = sys.modules[__name__]
         delattr(module, cls.__name__)
         for name, path in programs.items():
-            setattr(module, name, cls(path, None, None))
-            setattr(text, name, cls(path, True, None))
+            setattr(module, name, cls(path, True, None))
+            setattr(binary, name, cls(path, None, None))
 
     def __init__(self, path, textmode, cwd):
         self.path = path
