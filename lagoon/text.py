@@ -15,9 +15,3 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from . import Program
-
-class TextProgram(Program): # TODO: Text mode should be the default.
-
-    def __call__(self, *args, **kwargs):
-        return super().__call__(*args, **kwargs, universal_newlines = True)

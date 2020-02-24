@@ -23,6 +23,7 @@ class Program:
 
     @classmethod
     def scan(cls):
+        # TODO: Text mode should be the default.
         from . import text
         import os, sys
         programs = {}
@@ -33,16 +34,18 @@ class Program:
                         programs[name] = os.path.join(parent, name)
         module = sys.modules[__name__]
         for name, path in programs.items():
-            setattr(module, name, cls(path))
-            setattr(text, name, text.TextProgram(path))
+            setattr(module, name, cls(path, None))
+            setattr(text, name, cls(path, True))
 
-    def __init__(self, path):
+    def __init__(self, path, textmode):
         self.path = path
+        self.textmode = textmode
 
     def __call__(self, *args, **kwargs):
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
+        kwargs.setdefault('universal_newlines', self.textmode)
         # TODO: Simply return stdout if there is nothing else of interest.
         return subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
 
