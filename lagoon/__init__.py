@@ -30,11 +30,11 @@ class Program:
             if os.path.isdir(parent):
                 for name in os.listdir(parent):
                     if name not in programs:
-                        programs[name] = cls(os.path.join(parent, name))
+                        programs[name] = os.path.join(parent, name)
         module = sys.modules[__name__]
-        for name, program in programs.items():
-            setattr(module, name, program)
-            setattr(text, name, text.TextProgram(program.path))
+        for name, path in programs.items():
+            setattr(module, name, cls(path))
+            setattr(text, name, text.TextProgram(path))
 
     def __init__(self, path):
         self.path = path
