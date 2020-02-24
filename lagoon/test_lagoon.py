@@ -44,3 +44,21 @@ class TestLagoon(unittest.TestCase):
     def test_stringify(self):
         from .text import echo
         self.assertEqual(f"text binary 100 eranu{os.sep}uvavu\n", echo('text', b'binary', 100, Path('eranu', 'uvavu')).stdout)
+
+    def test_cd(self):
+        from .text import pwd
+        self.assertEqual(f"{Path.cwd()}\n", pwd().stdout)
+        self.assertEqual(f"{Path.cwd()}\n", pwd(cwd = '.').stdout)
+        self.assertEqual('/tmp\n', pwd(cwd = '/tmp').stdout)
+        pwd = pwd.cd('/usr')
+        self.assertEqual('/usr\n', pwd().stdout)
+        self.assertEqual('/usr\n', pwd(cwd = '.').stdout)
+        self.assertEqual('/usr/bin\n', pwd(cwd = 'bin').stdout)
+        self.assertEqual('/\n', pwd(cwd = '..').stdout)
+        self.assertEqual('/tmp\n', pwd(cwd = '/tmp').stdout)
+        pwd = pwd.cd('local')
+        self.assertEqual('/usr/local\n', pwd().stdout)
+        self.assertEqual('/usr/local\n', pwd(cwd = '.').stdout)
+        self.assertEqual('/usr/local/bin\n', pwd(cwd = 'bin').stdout)
+        self.assertEqual('/usr\n', pwd(cwd = '..').stdout)
+        self.assertEqual('/tmp\n', pwd(cwd = '/tmp').stdout)

@@ -34,18 +34,27 @@ class Program:
                         programs[name] = os.path.join(parent, name)
         module = sys.modules[__name__]
         for name, path in programs.items():
-            setattr(module, name, cls(path, None))
-            setattr(text, name, cls(path, True))
+            setattr(module, name, cls(path, None, None))
+            setattr(text, name, cls(path, True, None))
 
-    def __init__(self, path, textmode):
+    def __init__(self, path, textmode, cwd):
         self.path = path
         self.textmode = textmode
+        self.cwd = cwd
+
+    def _resolve(self, path):
+        from pathlib import Path
+        return Path(path) if self.cwd is None else self.cwd / path
+
+    def cd(self, cwd):
+        return type(self)(self.path, self.textmode, self._resolve(cwd))
 
     def __call__(self, *args, **kwargs):
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('universal_newlines', self.textmode)
+        kwargs['cwd'] = self._resolve(kwargs['cwd']) if 'cwd' in kwargs else self.cwd
         # TODO: Simply return stdout if there is nothing else of interest.
         return subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
 
