@@ -33,6 +33,7 @@ class Program:
                     if name not in programs:
                         programs[name] = os.path.join(parent, name)
         module = sys.modules[__name__]
+        delattr(module, cls.__name__)
         for name, path in programs.items():
             setattr(module, name, cls(path, None, None))
             setattr(text, name, cls(path, True, None))
