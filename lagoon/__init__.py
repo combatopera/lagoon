@@ -34,20 +34,24 @@ class Program:
         module = sys.modules[__name__]
         delattr(module, cls.__name__)
         for name, path in programs.items():
-            setattr(module, name, cls(path, True, None))
-            setattr(binary, name, cls(path, None, None))
+            setattr(module, name, cls(path, True, None, ()))
+            setattr(binary, name, cls(path, None, None, ()))
 
-    def __init__(self, path, textmode, cwd):
+    def __init__(self, path, textmode, cwd, subcommand):
         self.path = path
         self.textmode = textmode
         self.cwd = cwd
+        self.subcommand = subcommand
 
     def _resolve(self, path):
         from pathlib import Path
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return type(self)(self.path, self.textmode, self._resolve(cwd))
+        return type(self)(self.path, self.textmode, self._resolve(cwd), self.subcommand)
+
+    def __getattr__(self, name):
+        return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,))
 
     def __call__(self, *args, **kwargs):
         import itertools, subprocess
@@ -56,7 +60,7 @@ class Program:
         kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
         kwargs['cwd'] = self._resolve(kwargs['cwd']) if 'cwd' in kwargs else self.cwd
-        completed = subprocess.run(list(itertools.chain([self.path], map(self._strorbytes, args))), **kwargs)
+        completed = subprocess.run(list(itertools.chain([self.path], self.subcommand, map(self._strorbytes, args))), **kwargs)
         fields = set()
         if not kwargs['check']:
             fields.add('returncode')
