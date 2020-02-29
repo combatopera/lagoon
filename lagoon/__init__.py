@@ -21,6 +21,10 @@ class Program:
     def _strorbytes(arg):
         return arg if isinstance(arg, bytes) else str(arg)
 
+    @staticmethod
+    def _strornone(arg):
+        return arg if arg is None else str(arg)
+
     @classmethod
     def scan(cls):
         from . import binary
@@ -59,7 +63,7 @@ class Program:
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
-        kwargs['cwd'] = self._resolve(kwargs['cwd']) if 'cwd' in kwargs else self.cwd
+        kwargs['cwd'] = self._strornone(self._resolve(kwargs['cwd']) if 'cwd' in kwargs else self.cwd)
         completed = subprocess.run(list(itertools.chain([self.path], self.subcommand, map(self._strorbytes, args))), **kwargs)
         fields = set()
         if not kwargs['check']:
