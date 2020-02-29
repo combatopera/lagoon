@@ -42,12 +42,12 @@ class TestLagoon(unittest.TestCase):
 
     def test_stringify(self):
         from . import echo
-        self.assertEqual(f"text binary 100 eranu{os.sep}uvavu\n", echo('text', b'binary', 100, Path('eranu', 'uvavu')))
+        self.assertEqual("text binary 100 eranu%suvavu\n" % os.sep, echo('text', b'binary', 100, Path('eranu', 'uvavu')))
 
     def test_cd(self):
         from . import pwd
-        self.assertEqual(f"{Path.cwd()}\n", pwd())
-        self.assertEqual(f"{Path.cwd()}\n", pwd(cwd = '.'))
+        self.assertEqual("%s\n" % Path.cwd(), pwd())
+        self.assertEqual("%s\n" % Path.cwd(), pwd(cwd = '.'))
         self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
         pwd = pwd.cd('/usr')
         self.assertEqual('/usr\n', pwd())
