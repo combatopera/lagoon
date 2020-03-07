@@ -98,10 +98,12 @@ class Program:
     def bg(self, *args, **kwargs):
         cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.wait)
         check = kwargs.pop('check')
-        with subprocess.Popen(cmd, **kwargs) as process:
-            yield xform(process)
-        if check and process.returncode:
-            raise subprocess.CalledProcessError(process.returncode, cmd)
+        try:
+            with subprocess.Popen(cmd, **kwargs) as process:
+                yield xform(process)
+        finally:
+            if check and process.returncode:
+                raise subprocess.CalledProcessError(process.returncode, cmd)
 
     def print(self, *args, **kwargs):
         return self(*args, **kwargs, stdout = None)

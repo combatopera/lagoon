@@ -124,17 +124,24 @@ class TestLagoon(unittest.TestCase):
                 diff(p1, f1, stdin = None) # XXX: Too strict?
 
     def test_bg(self):
-        from . import echo, false
+        from . import echo, false, true
         with echo.bg('woo') as stdout:
             self.assertEqual('woo\n', stdout.read())
         with self.assertRaises(subprocess.CalledProcessError) as cm, false.bg():
             pass
         self.assertEqual(1, cm.exception.returncode)
         self.assertEqual([false.path], cm.exception.cmd)
+        self.assertIs(None, cm.exception.__context__)
         e = Exception()
-        with self.assertRaises(Exception) as cm, false.bg(): # XXX: Really ignore the fail?
+        with self.assertRaises(subprocess.CalledProcessError) as cm, false.bg():
             raise e
-        self.assertIs(e, cm.exception)
+        self.assertEqual(1, cm.exception.returncode)
+        self.assertEqual([false.path], cm.exception.cmd)
+        self.assertIs(e, cm.exception.__context__)
+        x = Exception()
+        with self.assertRaises(Exception) as cm, true.bg():
+            raise x
+        self.assertIs(x, cm.exception)
         with echo.bg('woo', check = False) as process:
             self.assertEqual('woo\n', process.stdout.read())
         self.assertEqual(0, process.returncode)
