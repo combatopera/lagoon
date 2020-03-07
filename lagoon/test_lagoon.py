@@ -132,12 +132,12 @@ class TestLagoon(unittest.TestCase):
         self.assertEqual(1, cm.exception.returncode)
         self.assertEqual([false.path], cm.exception.cmd)
         e = Exception()
-        with self.assertRaises(Exception) as cm, false.bg():
+        with self.assertRaises(Exception) as cm, false.bg(): # XXX: Really ignore the fail?
             raise e
         self.assertIs(e, cm.exception)
         with echo.bg('woo', check = False) as process:
             self.assertEqual('woo\n', process.stdout.read())
         self.assertEqual(0, process.returncode)
-        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as returncode:
-            self.assertEqual(False, returncode.done())
-        self.assertEqual(0, returncode.result())
+        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as returncodefuture: # XXX: Is Future a good idea?
+            self.assertEqual(False, returncodefuture.done())
+        self.assertEqual(0, returncodefuture.result())
