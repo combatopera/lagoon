@@ -108,8 +108,14 @@ class TestLagoon(unittest.TestCase):
             self.assertEqual(1, diff(p1, '-', input = text2, check = False, stdout = subprocess.DEVNULL))
             with p1.open() as f1, self.assertRaises(ValueError):
                 diff(p1, f1, input = text2)
+            # But None is OK:
+            with p1.open() as f1:
+                diff(p1, f1, input = None)
             # Can't use stdin when it's already in use:
             with p2.open() as f2:
                 self.assertEqual(1, diff(p1, '-', stdin = f2, check = False, stdout = subprocess.DEVNULL))
             with p1.open() as f1, p2.open() as f2, self.assertRaises(ValueError):
                 diff(p1, f1, stdin = f2)
+            # Even if it's None:
+            with p1.open() as f1, self.assertRaises(ValueError):
+                diff(p1, f1, stdin = None)
