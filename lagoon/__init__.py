@@ -58,6 +58,7 @@ class Program:
         return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,))
 
     def __call__(self, *args, **kwargs):
+        # TODO: Merge env with current instead of replacing by default.
         import itertools, subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
