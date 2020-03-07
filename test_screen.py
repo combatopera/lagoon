@@ -47,7 +47,7 @@ class TestScreen(unittest.TestCase):
         with fifopath.open('w') as f:
             print('consume this', file = f)
         stuff = Stuff(session, '0', 'DUB_QUO')
-        yield logpath, stuff
+        yield stuff
         stuff.eof()
         self.assertEqual(0, screen.wait())
         with logpath.open() as f:
@@ -62,12 +62,12 @@ class TestScreen(unittest.TestCase):
         self._tempdir.cleanup()
 
     def test_escaping(self):
-        with self._session() as (logpath, stuff):
+        with self._session() as stuff:
             stuff(basestufftext)
             self.expected += basestufftext.splitlines()
 
     def test_largetext(self):
-        with self._session() as (logpath, stuff):
+        with self._session() as stuff:
             basesize = sum(len(part.data) for part in stuff.toparts(basestufftext))
             for mul in 1, 2:
                 for extra in 0, 1:
@@ -77,7 +77,7 @@ class TestScreen(unittest.TestCase):
 
     def test_atomicescape(self):
         text = 'x' * (Stuff.buffersize - 1) + '$'
-        with self._session() as (logpath, stuff):
+        with self._session() as stuff:
             stuff(text)
             self.expected.append(text)
 
@@ -88,6 +88,6 @@ class TestScreen(unittest.TestCase):
         self.assertEqual(95 + 96, len(printable))
         while len(printable) <= Stuff.buffersize:
             printable *= 2
-        with self._session() as (logpath, stuff):
+        with self._session() as stuff:
             stuff(printable)
             self.expected.append(printable)
