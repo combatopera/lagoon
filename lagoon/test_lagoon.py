@@ -16,7 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
-import os, subprocess, unittest
+import os, subprocess, tempfile, unittest
 
 class TestLagoon(unittest.TestCase):
 
@@ -78,3 +78,34 @@ class TestLagoon(unittest.TestCase):
         # Simply return None if there are no fields of interest:
         self.assertEqual(None, true.print())
         self.assertEqual(None, true.print(stderr = subprocess.STDOUT)) # Both streams printed on stdout.
+
+    def test_autostdin(self):
+        from . import diff
+        text1 = 'Hark, planet!\n'
+        text2 = 'xyz\n'
+        with tempfile.TemporaryDirectory() as d:
+            p1 = Path(d, 'text1')
+            p2 = Path(d, 'text2')
+            with p1.open('w') as f1:
+                f1.write(text1)
+            with p2.open('w') as f2:
+                f2.write(text2)
+            diff(p1, p1)
+            with p1.open() as f1:
+                diff(p1, f1)
+            with p1.open() as f1:
+                diff(f1, p1)
+            with p1.open() as f1, p1.open() as g1, self.assertRaises(ValueError):
+                diff(f1, g1)
+            diff(p1, '-', input = text1)
+            self.assertEqual(1, diff(p1, '-', input = text2, check = False, stdout = subprocess.DEVNULL))
+            with p1.open() as f1, self.assertRaises(ValueError):
+                diff(p1, f1, input = text2)
+
+            with p2.open() as f2:
+                self.assertEqual(1, diff(p1, '-', stdin = f2, check = False, stdout = subprocess.DEVNULL))
+
+            with p1.open() as f1, p2.open() as f2, self.assertRaises(ValueError):
+
+                diff(p1, f1, stdin = f2)
+
