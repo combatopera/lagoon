@@ -90,6 +90,6 @@ class Program:
 
     def exec(self, *args):
         import os
-        os.execv(self.path, [self.path] + list(args))
+        os.execv(self.path, [self.path, *args])
 
 Program.scan()
