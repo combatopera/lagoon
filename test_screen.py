@@ -18,7 +18,7 @@
 from screen import Stuff, screenenv
 from pathlib import Path
 from contextlib import contextmanager
-import unittest, subprocess, tempfile
+import os, subprocess, tempfile, unittest
 
 stufftemplate = r'''plain old line
 do not interpolate any of these: $USER ${USER} '$USER' '${USER}' x
@@ -42,7 +42,7 @@ class TestScreen(unittest.TestCase):
         logpath = self.dirpath / 'log'
         fifopath = self.dirpath / 'fifo'
         command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
-        subprocess.check_call(['mkfifo', str(fifopath)])
+        os.mkfifo(fifopath)
         screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command, env = screenenv('DUB_QUO'))
         with fifopath.open('w') as f:
             line, = self.expected
