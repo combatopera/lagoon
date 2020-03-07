@@ -70,12 +70,12 @@ class Program:
         def transformargs():
             for i, arg in enumerate(args):
                 yield '-' if i in readables else (arg if isinstance(arg, bytes) else str(arg))
-        return [[self.path, *self.subcommand, *transformargs()]], kwargs
+        return [self.path, *self.subcommand, *transformargs()], kwargs
 
     def __call__(self, *args, **kwargs):
         import subprocess
-        args, kwargs = self._transform(args, kwargs)
-        completed = subprocess.run(*args, **kwargs)
+        cmd, kwargs = self._transform(args, kwargs)
+        completed = subprocess.run(cmd, **kwargs)
         fields = set()
         if not kwargs['check']:
             fields.add('returncode')
