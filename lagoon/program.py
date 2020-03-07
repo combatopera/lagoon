@@ -15,25 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-class Program:
+from . import binary
+from contextlib import contextmanager
+from pathlib import Path
+import os, subprocess, sys
 
-    from contextlib import contextmanager
+class Program:
 
     @staticmethod
     def _strornone(arg):
         return arg if arg is None else str(arg)
 
     @classmethod
-    def scan(cls):
-        from . import binary
-        import os, sys
+    def scan(cls, modulename):
         programs = {}
         for parent in os.environ['PATH'].split(os.pathsep):
             if os.path.isdir(parent):
                 for name in os.listdir(parent):
                     if name not in programs:
                         programs[name] = os.path.join(parent, name)
-        module = sys.modules[__name__]
+        module = sys.modules[modulename]
         delattr(module, cls.__name__)
         for name, path in programs.items():
             setattr(module, name, cls(path, True, None, ()))
@@ -46,7 +47,6 @@ class Program:
         self.subcommand = subcommand
 
     def _resolve(self, path):
-        from pathlib import Path
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
@@ -57,7 +57,6 @@ class Program:
 
     def _transform(self, args, kwargs, checkxform):
         # TODO: Merge env with current instead of replacing by default.
-        import subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
@@ -81,9 +80,9 @@ class Program:
                 yield lambda res: res.stderr
         xforms = xforms()
         try:
-            xform = __builtins__['next'](xforms)
+            xform = next(xforms)
             try:
-                __builtins__['next'](xforms)
+                next(xforms)
                 xform = lambda res: res
             except StopIteration:
                 pass
@@ -92,13 +91,11 @@ class Program:
         return [self.path, *self.subcommand, *transformargs()], kwargs, xform
 
     def __call__(self, *args, **kwargs):
-        import subprocess
         cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.returncode)
         return xform(subprocess.run(cmd, **kwargs))
 
     @contextmanager
     def bg(self, *args, **kwargs):
-        import subprocess
         cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.wait)
         check = kwargs.pop('check')
         with subprocess.Popen(cmd, **kwargs) as process:
@@ -110,7 +107,4 @@ class Program:
         return self(*args, **kwargs, stdout = None)
 
     def exec(self, *args):
-        import os
         os.execv(self.path, [self.path, *args])
-
-Program.scan()
