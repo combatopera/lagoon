@@ -45,7 +45,8 @@ class TestScreen(unittest.TestCase):
         subprocess.check_call(['mkfifo', str(fifopath)])
         screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command, env = screenenv('DUB_QUO'))
         with fifopath.open('w') as f:
-            print('consume this', file = f)
+            line, = self.expected
+            print(line, file = f)
         stuff = Stuff(session, '0', 'DUB_QUO')
         yield stuff
         stuff.eof()
