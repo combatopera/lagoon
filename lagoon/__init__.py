@@ -55,7 +55,7 @@ class Program:
     def __getattr__(self, name):
         return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,))
 
-    def _transform(self, args, kwargs, *checkfields):
+    def _transform(self, args, kwargs, checkxform):
         # TODO: Merge env with current instead of replacing by default.
         import subprocess
         kwargs.setdefault('check', True)
@@ -72,35 +72,40 @@ class Program:
         def transformargs():
             for i, arg in enumerate(args):
                 yield '-' if i in readables else (arg if isinstance(arg, bytes) else str(arg))
-        fields = set()
-        if not kwargs['check']:
-            fields.update(checkfields)
-        if kwargs['stdout'] == subprocess.PIPE:
-            fields.add('stdout')
-        if kwargs['stderr'] == subprocess.PIPE:
-            fields.add('stderr')
-        if fields:
+        def xforms():
+            if not kwargs['check']:
+                yield checkxform
+            if kwargs['stdout'] == subprocess.PIPE:
+                yield lambda res: res.stdout
+            if kwargs['stderr'] == subprocess.PIPE:
+                yield lambda res: res.stderr
+        xforms = xforms()
+        try:
+            xform = __builtins__['next'](xforms)
             try:
-                field, = fields
-                xform = lambda res: getattr(res, field)
-            except ValueError:
+                __builtins__['next'](xforms)
                 xform = lambda res: res
-        else:
+            except StopIteration:
+                pass
+        except StopIteration:
             xform = lambda res: None
         return [self.path, *self.subcommand, *transformargs()], kwargs, xform
 
     def __call__(self, *args, **kwargs):
         import subprocess
-        cmd, kwargs, xform = self._transform(args, kwargs, 'returncode')
+        cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.returncode)
         return xform(subprocess.run(cmd, **kwargs))
 
     @contextmanager
     def bg(self, *args, **kwargs):
+        from concurrent.futures import Future
         import subprocess
-        cmd, kwargs, xform = self._transform(args, kwargs, 'returncode', 'wait')
+        returncodefuture = Future()
+        cmd, kwargs, xform = self._transform(args, kwargs, lambda res: returncodefuture)
         check = kwargs.pop('check')
         with subprocess.Popen(cmd, **kwargs) as process:
             yield xform(process)
+        returncodefuture.set_result(process.returncode)
         if check and process.returncode:
             raise subprocess.CalledProcessError(process.returncode, cmd)
 

@@ -138,6 +138,6 @@ class TestLagoon(unittest.TestCase):
         with echo.bg('woo', check = False) as process:
             self.assertEqual('woo\n', process.stdout.read())
         self.assertEqual(0, process.returncode)
-        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as process:
-            self.assertEqual(None, process.returncode)
-        self.assertEqual(0, process.returncode)
+        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as returncode:
+            self.assertEqual(False, returncode.done())
+        self.assertEqual(0, returncode.result())
