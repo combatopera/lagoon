@@ -55,7 +55,7 @@ class Program:
 
     def __call__(self, *args, **kwargs):
         # TODO: Merge env with current instead of replacing by default.
-        import itertools, subprocess
+        import subprocess
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
@@ -70,7 +70,7 @@ class Program:
         def transformargs():
             for i, arg in enumerate(args):
                 yield '-' if i in readables else (arg if isinstance(arg, bytes) else str(arg))
-        completed = subprocess.run(list(itertools.chain([self.path], self.subcommand, transformargs())), **kwargs)
+        completed = subprocess.run([self.path, *self.subcommand, *transformargs()], **kwargs)
         fields = set()
         if not kwargs['check']:
             fields.add('returncode')
