@@ -138,6 +138,5 @@ class TestLagoon(unittest.TestCase):
         with echo.bg('woo', check = False) as process:
             self.assertEqual('woo\n', process.stdout.read())
         self.assertEqual(0, process.returncode)
-        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as returncodefuture: # XXX: Is Future a good idea?
-            self.assertEqual(False, returncodefuture.done())
-        self.assertEqual(0, returncodefuture.result())
+        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as wait:
+            self.assertEqual(0, wait())

@@ -98,14 +98,11 @@ class Program:
 
     @contextmanager
     def bg(self, *args, **kwargs):
-        from concurrent.futures import Future
         import subprocess
-        returncodefuture = Future()
-        cmd, kwargs, xform = self._transform(args, kwargs, lambda res: returncodefuture)
+        cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.wait)
         check = kwargs.pop('check')
         with subprocess.Popen(cmd, **kwargs) as process:
             yield xform(process)
-        returncodefuture.set_result(process.returncode)
         if check and process.returncode:
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
