@@ -90,22 +90,26 @@ class TestLagoon(unittest.TestCase):
                 f1.write(text1)
             with p2.open('w') as f2:
                 f2.write(text2)
+            # Simple cases:
             diff(p1, p1)
+            with p1.open() as f1:
+                diff(p1, '-', stdin = f1)
             with p1.open() as f1:
                 diff(p1, f1)
             with p1.open() as f1:
+                diff('-', p1, stdin = f1)
+            with p1.open() as f1:
                 diff(f1, p1)
+            # Can't use stdin twice:
             with p1.open() as f1, p1.open() as g1, self.assertRaises(ValueError):
                 diff(f1, g1)
+            # Can't use stdin when input in use:
             diff(p1, '-', input = text1)
             self.assertEqual(1, diff(p1, '-', input = text2, check = False, stdout = subprocess.DEVNULL))
             with p1.open() as f1, self.assertRaises(ValueError):
                 diff(p1, f1, input = text2)
-
+            # Can't use stdin when it's already in use:
             with p2.open() as f2:
                 self.assertEqual(1, diff(p1, '-', stdin = f2, check = False, stdout = subprocess.DEVNULL))
-
             with p1.open() as f1, p2.open() as f2, self.assertRaises(ValueError):
-
                 diff(p1, f1, stdin = f2)
-
