@@ -122,3 +122,22 @@ class TestLagoon(unittest.TestCase):
             # Even if it's None:
             with p1.open() as f1, self.assertRaises(ValueError):
                 diff(p1, f1, stdin = None) # XXX: Too strict?
+
+    def test_bg(self):
+        from . import echo, false
+        with echo.bg('woo') as stdout:
+            self.assertEqual('woo\n', stdout.read())
+        with self.assertRaises(subprocess.CalledProcessError) as cm, false.bg():
+            pass
+        self.assertEqual(1, cm.exception.returncode)
+        self.assertEqual([false.path], cm.exception.cmd)
+        e = Exception()
+        with self.assertRaises(Exception) as cm, false.bg():
+            raise e
+        self.assertIs(e, cm.exception)
+        with echo.bg('woo', check = False) as process:
+            self.assertEqual('woo\n', process.stdout.read())
+        self.assertEqual(0, process.returncode)
+        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as process:
+            self.assertEqual(None, process.returncode)
+        self.assertEqual(0, process.returncode)

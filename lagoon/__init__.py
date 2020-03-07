@@ -17,6 +17,8 @@
 
 class Program:
 
+    from contextlib import contextmanager
+
     @staticmethod
     def _strornone(arg):
         return arg if arg is None else str(arg)
@@ -53,7 +55,7 @@ class Program:
     def __getattr__(self, name):
         return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,))
 
-    def _transform(self, args, kwargs):
+    def _transform(self, args, kwargs, *checkfields):
         # TODO: Merge env with current instead of replacing by default.
         import subprocess
         kwargs.setdefault('check', True)
@@ -72,7 +74,7 @@ class Program:
                 yield '-' if i in readables else (arg if isinstance(arg, bytes) else str(arg))
         fields = set()
         if not kwargs['check']:
-            fields.add('returncode')
+            fields.update(checkfields)
         if kwargs['stdout'] == subprocess.PIPE:
             fields.add('stdout')
         if kwargs['stderr'] == subprocess.PIPE:
@@ -89,8 +91,18 @@ class Program:
 
     def __call__(self, *args, **kwargs):
         import subprocess
-        cmd, kwargs, xform = self._transform(args, kwargs)
+        cmd, kwargs, xform = self._transform(args, kwargs, 'returncode')
         return xform(subprocess.run(cmd, **kwargs))
+
+    @contextmanager
+    def bg(self, *args, **kwargs):
+        import subprocess
+        cmd, kwargs, xform = self._transform(args, kwargs, 'returncode', 'wait')
+        check = kwargs.pop('check')
+        with subprocess.Popen(cmd, **kwargs) as process:
+            yield xform(process)
+        if check and process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
 
     def print(self, *args, **kwargs):
         return self(*args, **kwargs, stdout = None)
