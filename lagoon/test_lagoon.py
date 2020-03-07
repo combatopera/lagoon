@@ -103,6 +103,9 @@ class TestLagoon(unittest.TestCase):
             # Can't use stdin twice:
             with p1.open() as f1, p1.open() as g1, self.assertRaises(ValueError):
                 diff(f1, g1)
+            # Even if it's the same stream:
+            with p1.open() as f1, self.assertRaises(ValueError):
+                diff(f1, f1) # XXX: Allow this as diff can handle it?
             # Can't use stdin when input in use:
             diff(p1, '-', input = text1)
             self.assertEqual(1, diff(p1, '-', input = text2, check = False, stdout = subprocess.DEVNULL))
@@ -118,4 +121,4 @@ class TestLagoon(unittest.TestCase):
                 diff(p1, f1, stdin = f2)
             # Even if it's None:
             with p1.open() as f1, self.assertRaises(ValueError):
-                diff(p1, f1, stdin = None)
+                diff(p1, f1, stdin = None) # XXX: Too strict?
