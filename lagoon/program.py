@@ -37,26 +37,33 @@ class Program:
         module = sys.modules[modulename]
         delattr(module, cls.__name__)
         for name, path in programs.items():
-            setattr(module, name, cls(path, True, None, ()))
-            setattr(binary, name, cls(path, None, None, ()))
+            setattr(module, name, cls(path, True, None, (), (), {}))
+            setattr(binary, name, cls(path, None, None, (), (), {}))
 
-    def __init__(self, path, textmode, cwd, subcommand):
+    def __init__(self, path, textmode, cwd, subcommand, args, kwargs):
         self.path = path
         self.textmode = textmode
         self.cwd = cwd
         self.subcommand = subcommand
+        self.args = args
+        self.kwargs = kwargs
 
     def _resolve(self, path):
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return type(self)(self.path, self.textmode, self._resolve(cwd), self.subcommand)
+        return type(self)(self.path, self.textmode, self._resolve(cwd), self.subcommand, self.args, self.kwargs)
 
     def __getattr__(self, name):
-        return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,))
+        return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,), self.args, self.kwargs)
+
+    def partial(self, *args, **kwargs):
+        return type(self)(self.path, self.textmode, self.cwd, self.subcommand, self.args + args, {**self.kwargs, **kwargs})
 
     def _transform(self, args, kwargs, checkxform):
         # TODO: Merge env with current instead of replacing by default.
+        args = self.args + args
+        kwargs = {**self.kwargs, **kwargs}
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)

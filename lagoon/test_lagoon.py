@@ -147,3 +147,18 @@ class TestLagoon(unittest.TestCase):
         self.assertEqual(0, process.returncode)
         with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as wait:
             self.assertEqual(0, wait())
+
+    def test_partial(self):
+        from . import expr
+        test100 = expr.partial(100, check = False)
+        cp = test100('=', '100')
+        self.assertEqual('1\n', cp.stdout)
+        self.assertEqual(0, cp.returncode)
+        cp = test100('=', 101)
+        self.assertEqual('0\n', cp.stdout)
+        self.assertEqual(1, cp.returncode)
+        self.assertEqual(0, test100('=', 100, stdout = subprocess.DEVNULL))
+        with self.assertRaises(subprocess.CalledProcessError):
+            test100('=', 101, check = True)
+        with test100.bg('=', 100) as process:
+            self.assertEqual('1\n', process.stdout.read())
