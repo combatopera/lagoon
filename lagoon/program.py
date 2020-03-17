@@ -16,6 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import binary
+from .util import unmangle
 from contextlib import contextmanager
 from pathlib import Path
 import os, subprocess, sys
@@ -55,7 +56,7 @@ class Program:
         return type(self)(self.path, self.textmode, self._resolve(cwd), self.subcommand, self.args, self.kwargs)
 
     def __getattr__(self, name):
-        return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (name,), self.args, self.kwargs)
+        return type(self)(self.path, self.textmode, self.cwd, self.subcommand + (unmangle(name).replace('_', '-'),), self.args, self.kwargs)
 
     def partial(self, *args, **kwargs):
         return type(self)(self.path, self.textmode, self.cwd, self.subcommand, self.args + args, {**self.kwargs, **kwargs})
