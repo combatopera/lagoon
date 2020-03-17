@@ -21,3 +21,4 @@ years +=
     2019
 author = Andrzej Cichocki
 name = lagoon
+requires += diapyr
