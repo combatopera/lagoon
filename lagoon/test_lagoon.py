@@ -162,3 +162,8 @@ class TestLagoon(unittest.TestCase):
             test100('=', 101, check = True)
         with test100.bg('=', 100) as process:
             self.assertEqual('1\n', process.stdout.read())
+
+    def test_partial2(self):
+        from . import bash
+        git = bash._c.partial('git "$@"', 'git')
+        self.assertEqual('', git.rev_parse())
