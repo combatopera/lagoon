@@ -1,4 +1,4 @@
-# Copyright 2018, 2019 Andrzej Cichocki
+# Copyright 2018, 2019, 2020 Andrzej Cichocki
 
 # This file is part of lagoon.
 #
