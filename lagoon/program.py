@@ -116,4 +116,4 @@ class Program:
         return self(*args, **kwargs, stdout = None)
 
     def exec(self, *args):
-        os.execv(self.path, [self.path, *args])
+        os.execv(self.path, [self.path, *self.args, *args])
