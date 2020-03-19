@@ -81,6 +81,8 @@ class Program:
         def xforms():
             if not kwargs['check']:
                 yield checkxform
+            if kwargs.get('stdin') == subprocess.PIPE:
+                yield lambda res: res.stdin
             if kwargs['stdout'] == subprocess.PIPE:
                 yield lambda res: res.stdout
             if kwargs['stderr'] == subprocess.PIPE:
