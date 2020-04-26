@@ -210,17 +210,22 @@ class TestLagoon(unittest.TestCase):
         self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
                 set(partial2(env = None).splitlines()))
         # Specified env is merged with partial env:
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
-                set(partial1(env = dict(TestLagoon = 'y')).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'},
-                set(partial1(env = dict(PATH = None)).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
-                set(partial1(env = os.environ).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
-                set(partial2(env = dict(TestLagoon = None)).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
-                set(partial2(env = dict(PATH = 'x')).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
-                set(partial2(env = os.environ).splitlines()))
-        self.assertEqual(['TestLagoon=y'],
-                partial2(env = {k: None for k in os.environ}).splitlines())
+        def direct(partial, env):
+            return partial(env = env)
+        def indirect(partial, env):
+            return partial.partial(env = env)()
+        for method in direct, indirect:
+            self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
+                    set(method(partial1, dict(TestLagoon = 'y')).splitlines()))
+            self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'},
+                    set(method(partial1, dict(PATH = None)).splitlines()))
+            self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                    set(method(partial1, os.environ).splitlines()))
+            self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                    set(method(partial2, dict(TestLagoon = None)).splitlines()))
+            self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
+                    set(method(partial2, dict(PATH = 'x')).splitlines()))
+            self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+                    set(method(partial2, os.environ).splitlines()))
+            self.assertEqual(['TestLagoon=y'],
+                    method(partial2, {k: None for k in os.environ}).splitlines())
