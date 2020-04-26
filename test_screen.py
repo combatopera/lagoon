@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from lagoon import screen
 from screen import Stuff, screenenv
 from pathlib import Path
 from contextlib import contextmanager
-import os, subprocess, tempfile, unittest
+import os, tempfile, unittest
 
 stufftemplate = r'''plain old line
 do not interpolate any of these: $USER ${USER} '$USER' '${USER}' x
@@ -43,14 +44,13 @@ class TestScreen(unittest.TestCase):
         fifopath = self.dirpath / 'fifo'
         command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
         os.mkfifo(fifopath)
-        screen = subprocess.Popen(['screen', '-S', session, '-d', '-m'] + command, env = screenenv('DUB_QUO'))
-        with fifopath.open('w') as f:
-            line, = self.expected
-            print(line, file = f)
-        stuff = Stuff(session, '0', 'DUB_QUO')
-        yield stuff
-        stuff.eof()
-        self.assertEqual(0, screen.wait())
+        with screen.bg('-S', session, '-d', '-m', *command, env = screenenv('DUB_QUO')):
+            with fifopath.open('w') as f:
+                line, = self.expected
+                print(line, file = f)
+            stuff = Stuff(session, '0', 'DUB_QUO')
+            yield stuff
+            stuff.eof()
         with logpath.open() as f:
             self.assertEqual(self.expected, f.read().splitlines())
 
