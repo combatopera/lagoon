@@ -58,11 +58,21 @@ class Program:
         return type(self)(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs)
 
     def partial(self, *args, **kwargs):
-        return type(self)(self.path, self.textmode, self.cwd, self.args + args, {**self.kwargs, **kwargs})
+        return type(self)(self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs))
+
+    def _mergedkwargs(self, kwargs):
+        merged = {**self.kwargs, **kwargs}
+        k = 'env'
+        if k in self.kwargs and k in kwargs:
+            d1 = self.kwargs[k]
+            if d1 is not None: # Otherwise d2 wins, whatever it is.
+                d2 = kwargs[k]
+                merged[k] = d1 if d2 is None else {**d1, **d2}
+        return merged
 
     def _transform(self, args, kwargs, checkxform):
         args = self.args + args
-        kwargs = {**self.kwargs, **kwargs}
+        kwargs = self._mergedkwargs(kwargs)
         kwargs.setdefault('check', True)
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
