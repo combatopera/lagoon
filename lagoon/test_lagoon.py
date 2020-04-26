@@ -195,3 +195,32 @@ class TestLagoon(unittest.TestCase):
                 env(env = dict({k: None for k in os.environ}, TestLagoon = '')).splitlines())
         self.assertEqual(['PATH=x'],
                 env(env = dict({k: None for k in os.environ}, PATH = 'x')).splitlines())
+
+    def test_partialenv(self):
+        from . import env
+        partial1 = env.partial(env = dict(PATH = 'x'))
+        partial2 = env.partial(env = dict(TestLagoon = 'y'))
+        # Not specifying an env means use the partial one:
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x'},
+                set(partial1().splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x'},
+                set(partial1(env = None).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+                set(partial2().splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+                set(partial2(env = None).splitlines()))
+        # Specified env is merged with partial env:
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
+                set(partial1(env = dict(TestLagoon = 'y')).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'},
+                set(partial1(env = dict(PATH = None)).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                set(partial1(env = os.environ).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                set(partial2(env = dict(TestLagoon = None)).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
+                set(partial2(env = dict(PATH = 'x')).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+                set(partial2(env = os.environ).splitlines()))
+        self.assertEqual(['TestLagoon=y'],
+                partial2(env = {k: None for k in os.environ}).splitlines())
