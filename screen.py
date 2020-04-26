@@ -16,10 +16,10 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from lagoon import screen
-import re, os
+import re
 
-def screenenv(doublequotekey):
-    return {**os.environ, doublequotekey: '"'}
+def stuffablescreen(doublequotekey):
+    return screen.partial(env = {doublequotekey: '"'})
 
 class Stuff:
 

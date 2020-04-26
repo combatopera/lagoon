@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from lagoon import screen
-from screen import Stuff, screenenv
+from screen import Stuff, stuffablescreen
 from pathlib import Path
 from contextlib import contextmanager
 import os, tempfile, unittest
@@ -44,7 +43,7 @@ class TestScreen(unittest.TestCase):
         fifopath = self.dirpath / 'fifo'
         command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
         os.mkfifo(fifopath)
-        with screen.bg('-S', session, '-d', '-m', *command, env = screenenv('DUB_QUO')):
+        with stuffablescreen('DUB_QUO').bg('-S', session, '-d', '-m', *command):
             with fifopath.open('w') as f:
                 line, = self.expected
                 print(line, file = f)
