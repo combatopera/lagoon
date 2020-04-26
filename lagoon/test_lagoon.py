@@ -167,3 +167,31 @@ class TestLagoon(unittest.TestCase):
         from . import bash
         git = bash._c.partial('git "$@"', 'git')
         self.assertEqual('', git.rev_parse())
+
+    def test_env(self):
+        from . import env
+        # Consistency with regular subprocess:
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                set(env().splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                set(env(env = None).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                set(env(env = os.environ).splitlines()))
+        # We modify the env instead of replacing it:
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=override'},
+                set(env(env = dict(PATH = 'override')).splitlines()))
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=new'},
+                set(env(env = dict(TestLagoon = 'new')).splitlines()))
+        # Use None to delete an entry:
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'},
+                set(env(env = dict(PATH = None)).splitlines()))
+        # Delete is lenient:
+        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+                set(env(env = dict(TestLagoon = None)).splitlines()))
+        # Easy enough to replace the env if you really want:
+        self.assertEqual([],
+                env(env = {k: None for k in os.environ}).splitlines())
+        self.assertEqual(['TestLagoon='],
+                env(env = dict({k: None for k in os.environ}, TestLagoon = '')).splitlines())
+        self.assertEqual(['PATH=x'],
+                env(env = dict({k: None for k in os.environ}, PATH = 'x')).splitlines())

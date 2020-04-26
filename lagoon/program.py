@@ -61,7 +61,6 @@ class Program:
         return type(self)(self.path, self.textmode, self.cwd, self.args + args, {**self.kwargs, **kwargs})
 
     def _transform(self, args, kwargs, checkxform):
-        # TODO: Merge env with current instead of replacing by default.
         args = self.args + args
         kwargs = {**self.kwargs, **kwargs}
         kwargs.setdefault('check', True)
@@ -69,6 +68,9 @@ class Program:
         kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
         kwargs['cwd'] = self._strornone(self._resolve(kwargs['cwd']) if 'cwd' in kwargs else self.cwd)
+        env = kwargs.get('env')
+        kwargs['env'] = (None if env is None else
+                {**{k: v for k, v in os.environ.items() if env.get(k, v) is not None}, **{k: v for k, v in env.items() if v is not None}})
         readables = {i for i, f in enumerate(args) if getattr(f, 'readable', lambda: False)()}
         if readables:
             i, = readables
