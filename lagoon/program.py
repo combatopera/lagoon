@@ -38,8 +38,16 @@ class Program:
         module = sys.modules[modulename]
         delattr(module, cls.__name__)
         for name, path in programs.items():
-            setattr(module, name, cls(path, True, None, (), {}))
-            setattr(binary, name, cls(path, None, None, (), {}))
+            setattr(module, name, cls.text(path))
+            setattr(binary, name, cls.binary(path))
+
+    @classmethod
+    def text(cls, path):
+        return cls(path, True, None, (), {})
+
+    @classmethod
+    def binary(cls, path):
+        return cls(path, None, None, (), {})
 
     def __init__(self, path, textmode, cwd, args, kwargs):
         self.path = path

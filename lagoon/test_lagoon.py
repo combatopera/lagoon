@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from .program import Program
 from pathlib import Path
 import os, subprocess, tempfile, unittest
 
@@ -229,3 +230,7 @@ class TestLagoon(unittest.TestCase):
                     set(method(partial2, os.environ).splitlines()))
             self.assertEqual(['TestLagoon=y'],
                     method(partial2, {k: None for k in os.environ}).splitlines())
+
+    def test_api(self):
+        self.assertEqual('woo\n', Program.text('/bin/echo')('woo'))
+        self.assertEqual(b'woo\n', Program.binary('/bin/echo')('woo'))
