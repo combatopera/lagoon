@@ -232,5 +232,6 @@ class TestLagoon(unittest.TestCase):
                     method(partial2, {k: None for k in os.environ}).splitlines())
 
     def test_api(self):
-        self.assertEqual('woo\n', Program.text('/bin/echo')('woo'))
-        self.assertEqual(b'woo\n', Program.binary('/bin/echo')('woo'))
+        for t in str, Path:
+            self.assertEqual('woo\n', Program.text(t('/bin/echo'))('woo'))
+            self.assertEqual(b'woo\n', Program.binary(t('/bin/echo'))('woo'))
