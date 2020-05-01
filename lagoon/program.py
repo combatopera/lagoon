@@ -37,9 +37,17 @@ class Program:
                         programs[name] = os.path.join(parent, name)
         module = sys.modules[modulename]
         delattr(module, cls.__name__)
+        def install(key):
+            setattr(module, key, textprogram)
+            setattr(binary, key, binaryprogram)
         for name, path in programs.items():
-            setattr(module, name, cls.text(path))
-            setattr(binary, name, cls.binary(path))
+            textprogram = cls.text(path)
+            binaryprogram = cls.binary(path)
+            install(name)
+            if '-' in name:
+                importable = name.replace('-', '_')
+                if importable not in programs:
+                    install(importable)
 
     @classmethod
     def text(cls, path):
