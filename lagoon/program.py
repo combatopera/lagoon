@@ -142,7 +142,7 @@ class Program:
             if check and process.returncode:
                 raise subprocess.CalledProcessError(process.returncode, cmd)
 
-    def print(self, *args, **kwargs):
+    def print(self, *args, **kwargs): # TODO LATER: Allow as non-terminal subcommand.
         return self(*args, **kwargs, stdout = None)
 
     def exec(self, *args): # TODO: Support cwd and env.
