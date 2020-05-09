@@ -18,6 +18,7 @@
 from . import binary
 from .util import unmangle
 from contextlib import contextmanager
+from keyword import iskeyword
 from pathlib import Path
 import os, subprocess, sys
 
@@ -46,7 +47,7 @@ class Program:
             install(name)
             if '-' in name:
                 importable = name.replace('-', '_')
-                if importable not in programs:
+                if importable.isidentifier() and not iskeyword(importable) and importable not in programs:
                     install(importable)
 
     @classmethod
