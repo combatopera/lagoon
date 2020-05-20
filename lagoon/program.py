@@ -146,5 +146,13 @@ class Program:
     def print(self, *args, **kwargs): # TODO LATER: Allow as non-terminal subcommand.
         return self(*args, **kwargs, stdout = None)
 
+    def tee(self, *args, **kwargs):
+        def lines():
+            with self.bg(*args, **kwargs) as stdout:
+                for line in stdout:
+                    yield line
+                    sys.stdout.write(line)
+        return ''.join(lines())
+
     def exec(self, *args): # TODO: Support cwd and env.
         os.execv(self.path, [self.path, *self.args, *args])

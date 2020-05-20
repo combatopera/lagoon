@@ -16,6 +16,8 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from .program import Program
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 import os, subprocess, tempfile, unittest
 
@@ -235,3 +237,11 @@ class TestLagoon(unittest.TestCase):
         for t in str, Path:
             self.assertEqual('woo\n', Program.text(t('/bin/echo'))('woo'))
             self.assertEqual(b'woo\n', Program.binary(t('/bin/echo'))('woo'))
+
+    def test_tee(self):
+        from . import echo
+        f = StringIO()
+        with redirect_stdout(f):
+            result = echo.tee('woo')
+        self.assertEqual('woo\n', result)
+        self.assertEqual('woo\n', f.getvalue())
