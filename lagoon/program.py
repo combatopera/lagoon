@@ -149,7 +149,10 @@ class Program:
     def tee(self, *args, **kwargs):
         def lines():
             with self.bg(*args, **kwargs) as stdout:
-                for line in stdout:
+                while True:
+                    line = stdout.readline()
+                    if not line:
+                        break
                     yield line
                     sys.stdout.write(line)
         return ''.join(lines())
