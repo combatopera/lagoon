@@ -264,16 +264,10 @@ class TestLagoon(unittest.TestCase):
                 return program('hmm', cwd = d)
             self.assertEqual('hmm\n', fire(Program.text('echo')))
             self.assertEqual('LOCAL hmm\n', fire(Program.text(Path('echo'))))
-            self.assertEqual('hmm\n', Program.text(sys.executable)._c('''from lagoon.program import Program
-from pathlib import Path
-import sys
-Program.text('echo').exec('hmm', cwd = %r)
-''' % d))
-            self.assertEqual('LOCAL hmm\n', Program.text(sys.executable)._c('''from lagoon.program import Program
-from pathlib import Path
-import sys
-Program.text(Path('echo')).exec('hmm', cwd = %r)
-''' % d))
+            def fireexec(programsrc):
+                return Program.text(sys.executable)._c("from lagoon.program import Program\nfrom pathlib import Path\n%s.exec('hmm', cwd = %r)" % (programsrc, d))
+            self.assertEqual('hmm\n', fireexec('''Program.text('echo')'''))
+            self.assertEqual('LOCAL hmm\n', fireexec('''Program.text(Path('echo'))'''))
 
     def test_execcwd(self):
         with tempfile.TemporaryDirectory() as d:
