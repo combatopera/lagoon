@@ -19,7 +19,7 @@ from .program import Program
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
-import os, subprocess, tempfile, unittest
+import os, stat, subprocess, tempfile, unittest
 
 class TestLagoon(unittest.TestCase):
 
@@ -254,3 +254,13 @@ class TestLagoon(unittest.TestCase):
             echo('hmm', stdout = f)
             f.seek(0)
             self.assertEqual(b'hmm\n', f.read())
+
+    def test_nameorrelpath(self):
+        with tempfile.TemporaryDirectory() as d:
+            localecho = Path(d, 'echo')
+            localecho.write_text('#!/bin/bash\necho LOCAL "$@"\n')
+            localecho.chmod(localecho.stat().st_mode | stat.S_IXUSR)
+            def fire(program):
+                return program('hmm', cwd = d)
+            self.assertEqual('hmm\n', fire(Program.text('echo')))
+            self.assertEqual('LOCAL hmm\n', fire(Program.text(Path('echo'))))

@@ -126,7 +126,14 @@ class Program:
                 pass
         except StopIteration:
             xform = lambda res: None
-        return [self.path, *transformargs()], kwargs, xform
+        return [self._xformpath(), *transformargs()], kwargs, xform
+
+    def _xformpath(self):
+        try:
+            is_absolute = self.path.is_absolute
+        except AttributeError:
+            return self.path
+        return self.path if is_absolute() else f"{os.curdir}{os.sep}{self.path}"
 
     def __call__(self, *args, **kwargs):
         cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.returncode)
