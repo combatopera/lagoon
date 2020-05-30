@@ -173,4 +173,4 @@ class Program:
         cwd = kwargs['cwd']
         if cwd is not None:
             os.chdir(cwd) # XXX: What if the exec fails to replace this process?
-        os.execv(cmd[0], cmd) # TODO: We probably need execvp.
+        os.execvp(cmd[0], cmd)
