@@ -19,7 +19,7 @@ from .program import Program
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
-import os, stat, subprocess, tempfile, unittest
+import os, stat, subprocess, sys, tempfile, unittest
 
 class TestLagoon(unittest.TestCase):
 
@@ -264,3 +264,8 @@ class TestLagoon(unittest.TestCase):
                 return program('hmm', cwd = d)
             self.assertEqual('hmm\n', fire(Program.text('echo')))
             self.assertEqual('LOCAL hmm\n', fire(Program.text(Path('echo'))))
+
+    def test_execcwd(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(f"{os.getcwd()}\n", Program.text(sys.executable)._c('from lagoon import pwd\npwd.exec()'))
+            self.assertEqual(f"{d}\n", Program.text(sys.executable)._c("from lagoon import pwd\npwd.exec(cwd = %r)" % d))
