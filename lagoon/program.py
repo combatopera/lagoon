@@ -164,13 +164,13 @@ class Program:
                     sys.stdout.write(line)
         return ''.join(lines())
 
-    def exec(self, *args, **kwargs): # TODO: Support env.
-        supportedkeys = {'cwd'}
+    def exec(self, *args, **kwargs):
+        supportedkeys = {'cwd', 'env'}
         keys = kwargs.keys()
         if not keys <= supportedkeys:
             raise Exception("Unsupported keywords: %s" % (keys - supportedkeys))
         cmd, kwargs, _ = self._transform(args, kwargs, None)
-        cwd = kwargs['cwd']
+        cwd, env = (kwargs[k] for k in ['cwd', 'env'])
         if cwd is not None:
             os.chdir(cwd) # XXX: What if the exec fails to replace this process?
-        os.execvp(cmd[0], cmd)
+        os.execvpe(cmd[0], cmd, env)
