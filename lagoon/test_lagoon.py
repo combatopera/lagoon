@@ -245,3 +245,12 @@ class TestLagoon(unittest.TestCase):
             result = echo.tee('woo')
         self.assertEqual('woo\n', result)
         self.assertEqual('woo\n', f.getvalue())
+
+    def test_stdoutclash(self):
+        from . import echo
+        with tempfile.TemporaryFile() as f:
+            with self.assertRaises(TypeError):
+                echo.print('hmm', stdout = f)
+            echo('hmm', stdout = f)
+            f.seek(0)
+            self.assertEqual(b'hmm\n', f.read())
