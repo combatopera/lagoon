@@ -47,7 +47,7 @@ class TestScreen(unittest.TestCase):
             with fifopath.open('w') as f:
                 line, = self.expected
                 print(line, file = f)
-            stuff = Stuff(session, '0', 'DUB_QUO')
+            stuff = Stuff(session, 0, 'DUB_QUO')
             yield stuff
             stuff.eof()
         with logpath.open() as f:
