@@ -41,7 +41,7 @@ class TestScreen(unittest.TestCase):
         session = self.dirpath.name
         logpath = self.dirpath / 'log'
         fifopath = self.dirpath / 'fifo'
-        command = ['bash', '-c', 'cat "$1" - >"$2"', 'cat', str(fifopath), str(logpath)]
+        command = 'bash', '-c', 'cat "$1" - >"$2"', 'cat', fifopath, logpath
         os.mkfifo(fifopath)
         with stuffablescreen('DUB_QUO').bg('-S', session, '-d', '-m', *command):
             with fifopath.open('w') as f:
