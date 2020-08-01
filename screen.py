@@ -73,6 +73,7 @@ class Stuff:
         self._juststuff('^C')
 
     def eof(self):
+        'May not cause EOF if not at the start of a line.'
         self._juststuff('^D')
 
     def _juststuff(self, data):
