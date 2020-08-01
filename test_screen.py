@@ -37,7 +37,6 @@ class TestScreen(unittest.TestCase):
 
     @contextmanager
     def _session(self):
-        # FIXME: Something about the fifo setup is unreliable.
         session = self.dirpath.name
         logpath = self.dirpath / 'log'
         fifopath = self.dirpath / 'fifo'
