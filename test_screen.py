@@ -80,6 +80,7 @@ class TestScreen(unittest.TestCase):
         with self._session() as stuff:
             stuff(text)
             self.expected.append(text)
+            stuff('\n')
 
     def test_printable(self):
         # The char just before space actually seems fine but we don't enforce that:
@@ -91,3 +92,4 @@ class TestScreen(unittest.TestCase):
         with self._session() as stuff:
             stuff(printable)
             self.expected.append(printable)
+            stuff('\n')
