@@ -21,6 +21,9 @@ from io import StringIO
 from pathlib import Path
 import os, stat, subprocess, sys, tempfile, unittest
 
+def _env(items):
+    return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
+
 class TestLagoon(unittest.TestCase):
 
     def test_nosuchprogram(self):
@@ -174,22 +177,22 @@ class TestLagoon(unittest.TestCase):
     def test_env(self):
         from . import env
         # Consistency with regular subprocess:
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+        self.assertEqual(_env(os.environ.items()),
                 set(env().splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+        self.assertEqual(_env(os.environ.items()),
                 set(env(env = None).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+        self.assertEqual(_env(os.environ.items()),
                 set(env(env = os.environ).splitlines()))
         # We modify the env instead of replacing it:
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=override'},
+        self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=override'},
                 set(env(env = dict(PATH = 'override')).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=new'},
+        self.assertEqual(_env(os.environ.items()) | {'TestLagoon=new'},
                 set(env(env = dict(TestLagoon = 'new')).splitlines()))
         # Use None to delete an entry:
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'},
+        self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH'),
                 set(env(env = dict(PATH = None)).splitlines()))
         # Delete is lenient:
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+        self.assertEqual(_env(os.environ.items()),
                 set(env(env = dict(TestLagoon = None)).splitlines()))
         # Easy enough to replace the env if you really want:
         self.assertEqual([],
@@ -204,13 +207,13 @@ class TestLagoon(unittest.TestCase):
         partial1 = env.partial(env = dict(PATH = 'x'))
         partial2 = env.partial(env = dict(TestLagoon = 'y'))
         # Not specifying an env means use the partial one:
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x'},
+        self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=x'},
                 set(partial1().splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x'},
+        self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=x'},
                 set(partial1(env = None).splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+        self.assertEqual(_env(os.environ.items()) | {'TestLagoon=y'},
                 set(partial2().splitlines()))
-        self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+        self.assertEqual(_env(os.environ.items()) | {'TestLagoon=y'},
                 set(partial2(env = None).splitlines()))
         # Specified env is merged with partial env:
         def direct(partial, env):
@@ -218,17 +221,17 @@ class TestLagoon(unittest.TestCase):
         def indirect(partial, env):
             return partial.partial(env = env)()
         for method in direct, indirect:
-            self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
+            self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=x', 'TestLagoon=y'},
                     set(method(partial1, dict(TestLagoon = 'y')).splitlines()))
-            self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'},
+            self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH'),
                     set(method(partial1, dict(PATH = None)).splitlines()))
-            self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+            self.assertEqual(_env(os.environ.items()),
                     set(method(partial1, os.environ).splitlines()))
-            self.assertEqual({f"{k}={v}" for k, v in os.environ.items()},
+            self.assertEqual(_env(os.environ.items()),
                     set(method(partial2, dict(TestLagoon = None)).splitlines()))
-            self.assertEqual({f"{k}={v}" for k, v in os.environ.items() if k != 'PATH'} | {'PATH=x', 'TestLagoon=y'},
+            self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=x', 'TestLagoon=y'},
                     set(method(partial2, dict(PATH = 'x')).splitlines()))
-            self.assertEqual({f"{k}={v}" for k, v in os.environ.items()} | {'TestLagoon=y'},
+            self.assertEqual(_env(os.environ.items()) | {'TestLagoon=y'},
                     set(method(partial2, os.environ).splitlines()))
             self.assertEqual(['TestLagoon=y'],
                     method(partial2, {k: None for k in os.environ}).splitlines())
