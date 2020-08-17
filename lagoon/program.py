@@ -98,6 +98,7 @@ class Program:
         env = kwargs.get('env')
         kwargs['env'] = (None if env is None else
                 {**{k: v for k, v in os.environ.items() if env.get(k, v) is not None}, **{k: v for k, v in env.items() if v is not None}})
+        aux = kwargs.pop('aux', None)
         readables = {i for i, f in enumerate(args) if getattr(f, 'readable', lambda: False)()}
         if readables:
             i, = readables
@@ -116,6 +117,8 @@ class Program:
                 yield lambda res: res.stdout
             if kwargs['stderr'] == subprocess.PIPE:
                 yield lambda res: res.stderr
+            if aux is not None:
+                yield lambda res: getattr(res, aux)
         xforms = xforms()
         try:
             xform = next(xforms)

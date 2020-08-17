@@ -19,6 +19,7 @@ from .program import Program
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from signal import SIGTERM
 import os, stat, subprocess, sys, tempfile, unittest
 
 def _env(items):
@@ -276,3 +277,15 @@ class TestLagoon(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(f"{os.getcwd()}\n", Program.text(sys.executable)._c('from lagoon import pwd\npwd.exec()'))
             self.assertEqual(f"{d}\n", Program.text(sys.executable)._c("from lagoon import pwd\npwd.exec(cwd = %r)" % d))
+
+    def test_aux(self):
+        from . import sleep
+        with self.assertRaises(subprocess.CalledProcessError) as cm, sleep.inf.bg(stdout = None, aux = 'terminate') as terminate:
+            terminate()
+        self.assertEqual(-SIGTERM, cm.exception.returncode)
+
+    def test_aux2(self):
+        from . import sleep
+        with sleep.inf.bg(stdout = None, aux = 'terminate', check = False) as p:
+            p.terminate()
+            self.assertEqual(-SIGTERM, p.wait())
