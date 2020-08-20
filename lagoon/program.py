@@ -90,7 +90,7 @@ class Program:
     def _transform(self, args, kwargs, checkxform):
         args = self.args + args
         kwargs = self._mergedkwargs(kwargs)
-        kwargs.setdefault('check', True)
+        kwargs.setdefault('check', True) # XXX: Support a check function?
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
