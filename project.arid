@@ -22,4 +22,4 @@ years +=
     2020
 author = Andrzej Cichocki
 name = lagoon
-requires += diapyr
+requires += diapyr>=18
