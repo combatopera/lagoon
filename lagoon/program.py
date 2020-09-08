@@ -174,6 +174,8 @@ class Program:
             raise Exception("Unsupported keywords: %s" % (keys - supportedkeys))
         cmd, kwargs, _ = self._transform(args, kwargs, None)
         cwd, env = (kwargs[k] for k in ['cwd', 'env'])
-        if cwd is not None:
-            os.chdir(cwd) # XXX: What if the exec fails to replace this process?
-        os.execvpe(cmd[0], cmd, env)
+        if cwd is None:
+            os.execvpe(cmd[0], cmd, env)
+        # First replace this program so that failure can't be caught after chdir:
+        precmd = [sys.executable, '-c', 'import os, sys; cwd, *cmd = sys.argv[1:]; os.chdir(cwd); os.execvp(cmd[0], cmd)', cwd, *cmd]
+        os.execve(precmd[0], precmd, os.environ if env is None else env)
