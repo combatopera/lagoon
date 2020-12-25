@@ -47,6 +47,10 @@ class Program:
                         programs[name] = os.path.join(parent, name)
         module = sys.modules[modulename]
         delattr(module, cls.__name__)
+        cls._scan(module, binary, programs)
+
+    @classmethod
+    def _scan(cls, module, binary, programs):
         def install(key):
             setattr(module, key, textprogram)
             setattr(binary, key, binaryprogram)
