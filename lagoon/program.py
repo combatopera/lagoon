@@ -17,12 +17,21 @@
 
 from . import binary
 from .util import unmangle
+from collections import defaultdict
 from contextlib import contextmanager
 from keyword import iskeyword
 from pathlib import Path
-import os, subprocess, sys
+import os, re, subprocess, sys
 
 class Program:
+
+    unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
+
+    @classmethod
+    def _importableornone(cls, anyname):
+        name = cls.unimportablechars.sub('_', anyname)
+        if name.isidentifier() and not iskeyword(name):
+            return name
 
     @staticmethod
     def _strornone(arg):
@@ -41,14 +50,17 @@ class Program:
         def install(key):
             setattr(module, key, textprogram)
             setattr(binary, key, binaryprogram)
-        for name, path in programs.items():
-            textprogram = cls.text(path)
-            binaryprogram = cls.binary(path)
-            install(name)
-            if '-' in name:
-                importable = name.replace('-', '_')
-                if importable.isidentifier() and not iskeyword(importable) and importable not in programs:
-                    install(importable)
+        importables = defaultdict(list)
+        for name in programs:
+            importables[cls._importableornone(name)].append(name)
+        for importable, names in importables.items():
+            for name in names:
+                path = programs[name]
+                textprogram = cls.text(path)
+                binaryprogram = cls.binary(path)
+                install(name)
+            if 1 == len(names) and importable not in {None, name}:
+                install(importable)
 
     @classmethod
     def text(cls, path):
