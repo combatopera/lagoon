@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from .util import unmangle
+from .util import atomic, unmangle
 from diapyr.util import singleton
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import TestCase
 
 @singleton
@@ -64,3 +66,25 @@ class TestUtil(TestCase):
         self._common('class A_B')
         self._common('class A__')
         self._common('class A__B')
+
+class TestAtomic(TestCase):
+
+    def test_works(self):
+        for relpath in ['x'], ['x', 'y'], ['x', 'y', 'z']:
+            with TemporaryDirectory() as d:
+                p = Path(d, *relpath)
+                for _ in range(2):
+                    with atomic(p) as q, q.open('w') as f:
+                        print('doc', file = f)
+                    self.assertFalse(q.exists())
+                    self.assertEqual('doc\n', p.read_text())
+
+    def test_fail(self):
+        class X(Exception): pass
+        with TemporaryDirectory() as d:
+            p = Path(d, 'x')
+            with self.assertRaises(X), atomic(p) as q, q.open('w') as f:
+                print('doc', file = f)
+                raise X
+            self.assertFalse(q.exists())
+            self.assertFalse(p.exists())
