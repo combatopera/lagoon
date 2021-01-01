@@ -23,6 +23,7 @@ from unittest import TestCase
 
 @singleton
 class Unmangle:
+
     def __getattr__(self, name):
         return unmangle(name)
 
