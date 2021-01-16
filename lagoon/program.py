@@ -23,6 +23,8 @@ from keyword import iskeyword
 from pathlib import Path
 import os, re, subprocess, sys
 
+bg = object()
+
 class Program:
 
     unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
@@ -163,6 +165,8 @@ class Program:
             return self.print
         elif style is exec:
             return self.exec
+        elif style is bg:
+            return self.bg
         else:
             raise Exception(style)
 
@@ -182,7 +186,7 @@ class Program:
 
     def tee(self, *args, **kwargs):
         def lines():
-            with self.bg(*args, **kwargs) as stdout:
+            with self[bg](*args, **kwargs) as stdout:
                 while True:
                     line = stdout.readline()
                     if not line:

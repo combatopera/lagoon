@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from .program import Program
+from .program import bg, Program
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
 from unittest import TestCase
-import os, stat, subprocess, sys
 
 def _env(items):
     return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
@@ -134,27 +133,27 @@ class TestLagoon(TestCase):
 
     def test_bg(self):
         from . import echo, false, true
-        with echo.bg('woo') as stdout:
+        with echo[bg]('woo') as stdout:
             self.assertEqual('woo\n', stdout.read())
-        with self.assertRaises(subprocess.CalledProcessError) as cm, false.bg():
+        with self.assertRaises(subprocess.CalledProcessError) as cm, false[bg]():
             pass
         self.assertEqual(1, cm.exception.returncode)
         self.assertEqual([false.path], cm.exception.cmd)
         self.assertIs(None, cm.exception.__context__)
         e = Exception()
-        with self.assertRaises(subprocess.CalledProcessError) as cm, false.bg():
+        with self.assertRaises(subprocess.CalledProcessError) as cm, false[bg]():
             raise e
         self.assertEqual(1, cm.exception.returncode)
         self.assertEqual([false.path], cm.exception.cmd)
         self.assertIs(e, cm.exception.__context__)
         x = Exception()
-        with self.assertRaises(Exception) as cm, true.bg():
+        with self.assertRaises(Exception) as cm, true[bg]():
             raise x
         self.assertIs(x, cm.exception)
-        with echo.bg('woo', check = False) as process:
+        with echo[bg]('woo', check = False) as process:
             self.assertEqual('woo\n', process.stdout.read())
         self.assertEqual(0, process.returncode)
-        with echo.bg('woo', check = False, stdout = subprocess.DEVNULL) as wait:
+        with echo[bg]('woo', check = False, stdout = subprocess.DEVNULL) as wait:
             self.assertEqual(0, wait())
 
     def test_partial(self):
@@ -169,7 +168,7 @@ class TestLagoon(TestCase):
         self.assertEqual(0, test100('=', 100, stdout = subprocess.DEVNULL))
         with self.assertRaises(subprocess.CalledProcessError):
             test100('=', 101, check = True)
-        with test100.bg('=', 100) as process:
+        with test100[bg]('=', 100) as process:
             self.assertEqual('1\n', process.stdout.read())
 
     def test_partial2(self):
@@ -282,12 +281,12 @@ class TestLagoon(TestCase):
 
     def test_aux(self):
         from . import sleep
-        with self.assertRaises(subprocess.CalledProcessError) as cm, sleep.inf.bg(stdout = None, aux = 'terminate') as terminate:
+        with self.assertRaises(subprocess.CalledProcessError) as cm, sleep.inf[bg](stdout = None, aux = 'terminate') as terminate:
             terminate()
         self.assertEqual(-SIGTERM, cm.exception.returncode)
 
     def test_aux2(self):
         from . import sleep
-        with sleep.inf.bg(stdout = None, aux = 'terminate', check = False) as p:
+        with sleep.inf[bg](stdout = None, aux = 'terminate', check = False) as p:
             p.terminate()
             self.assertEqual(-SIGTERM, p.wait())

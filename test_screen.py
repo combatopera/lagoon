@@ -16,6 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
+from lagoon.program import bg
 from pathlib import Path
 from screen import Stuff, stuffablescreen
 from tempfile import TemporaryDirectory
@@ -43,8 +44,8 @@ class TestScreen(TestCase):
         logpath = self.dirpath / 'log'
         fifopath = self.dirpath / 'fifo'
         command = 'bash', '-c', 'exec cat "$1" - >"$2"', 'cat', fifopath, logpath
-        os.mkfifo(fifopath)
-        with stuffablescreen('DUB_QUO').bg('-S', session, '-D', '-m', *command, stdout = None):
+        mkfifo(fifopath)
+        with stuffablescreen('DUB_QUO')[bg]('-S', session, '-D', '-m', *command, stdout = None):
             with fifopath.open('w') as f:
                 line, = self.expected
                 print(line, file = f)
