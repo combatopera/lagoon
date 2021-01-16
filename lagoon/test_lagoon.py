@@ -76,17 +76,17 @@ class TestLagoon(TestCase):
         # If we don't check, we need the returncode:
         self.assertEqual(1, false(check = False).returncode)
         self.assertEqual(0, true(check = False).returncode)
-        self.assertEqual(1, false.print(check = False))
-        self.assertEqual(0, true.print(check = False))
+        self.assertEqual(1, false[print](check = False))
+        self.assertEqual(0, true[print](check = False))
         # Just stdout:
         self.assertEqual('', true())
         self.assertEqual('', true(stderr = subprocess.STDOUT)) # Capture both streams in stdout field.
         # Capture stderr:
         self.assertEqual('', true(stderr = subprocess.PIPE).stderr)
-        self.assertEqual('', true.print(stderr = subprocess.PIPE))
+        self.assertEqual('', true[print](stderr = subprocess.PIPE))
         # Simply return None if there are no fields of interest:
-        self.assertEqual(None, true.print())
-        self.assertEqual(None, true.print(stderr = subprocess.STDOUT)) # Both streams printed on stdout.
+        self.assertEqual(None, true[print]())
+        self.assertEqual(None, true[print](stderr = subprocess.STDOUT)) # Both streams printed on stdout.
 
     def test_autostdin(self):
         from . import diff
@@ -256,7 +256,7 @@ class TestLagoon(TestCase):
         from . import echo
         with TemporaryFile() as f:
             with self.assertRaises(TypeError):
-                echo.print('hmm', stdout = f)
+                echo[print]('hmm', stdout = f)
             echo('hmm', stdout = f)
             f.seek(0)
             self.assertEqual(b'hmm\n', f.read())

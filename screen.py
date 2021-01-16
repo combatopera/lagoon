@@ -77,4 +77,4 @@ class Stuff:
         self._juststuff('^D')
 
     def _juststuff(self, data):
-        screen.print('-S', self.session, '-p', self.window, '-X', 'stuff', data)
+        screen[print]('-S', self.session, '-p', self.window, '-X', 'stuff', data)

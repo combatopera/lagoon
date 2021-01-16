@@ -158,6 +158,12 @@ class Program:
         cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.returncode)
         return xform(subprocess.run(cmd, **kwargs))
 
+    def __getitem__(self, style):
+        if style is print:
+            return self.print
+        else:
+            raise Exception(style)
+
     @contextmanager
     def bg(self, *args, **kwargs):
         cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.wait)
