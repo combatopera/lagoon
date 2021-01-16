@@ -24,6 +24,7 @@ from pathlib import Path
 import os, re, subprocess, sys
 
 bg = object()
+tee = object()
 
 class Program:
 
@@ -167,6 +168,8 @@ class Program:
             return self.exec
         elif style is bg:
             return self.bg
+        elif style is tee:
+            return self.tee
         else:
             raise Exception(style)
 

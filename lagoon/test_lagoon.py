@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from .program import bg, Program
+from .program import bg, Program, tee
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -247,7 +247,7 @@ class TestLagoon(TestCase):
         from . import echo
         f = StringIO()
         with redirect_stdout(f):
-            result = echo.tee('woo')
+            result = echo[tee]('woo')
         self.assertEqual('woo\n', result)
         self.assertEqual('woo\n', f.getvalue())
 
