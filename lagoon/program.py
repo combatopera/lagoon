@@ -161,6 +161,8 @@ class Program:
     def __getitem__(self, style):
         if style is print:
             return self.print
+        elif style is exec:
+            return self.exec
         else:
             raise Exception(style)
 
