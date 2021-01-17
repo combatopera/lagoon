@@ -22,6 +22,7 @@ from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
 from unittest import TestCase
+import os, stat, subprocess, sys
 
 def _env(items):
     return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
