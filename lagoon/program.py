@@ -23,9 +23,6 @@ from keyword import iskeyword
 from pathlib import Path
 import os, re, subprocess, sys
 
-bg = object()
-tee = object()
-
 class Program:
 
     unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
@@ -71,30 +68,34 @@ class Program:
 
     @classmethod
     def text(cls, path):
-        return cls(path, True, None, (), {})
+        return cls(path, True, None, (), {}, stdoutstyle)
 
     @classmethod
     def binary(cls, path):
-        return cls(path, None, None, (), {})
+        return cls(path, None, None, (), {}, stdoutstyle)
 
-    def __init__(self, path, textmode, cwd, args, kwargs):
+    def __init__(self, path, textmode, cwd, args, kwargs, style):
         self.path = path
         self.textmode = textmode
         self.cwd = cwd
         self.args = args
         self.kwargs = kwargs
+        self.style = style
 
     def _resolve(self, path):
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return type(self)(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs)
+        return type(self)(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.style)
 
     def __getattr__(self, name):
-        return type(self)(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs)
+        return type(self)(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.style)
 
     def partial(self, *args, **kwargs):
-        return type(self)(self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs))
+        return type(self)(self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.style)
+
+    def __getitem__(self, style):
+        return type(self)(self.path, self.textmode, self.cwd, self.args, self.kwargs, styles[style])
 
     def _mergedkwargs(self, kwargs):
         merged = {**self.kwargs, **kwargs}
@@ -158,55 +159,67 @@ class Program:
         return self.path if is_absolute() else f"{os.curdir}{os.sep}{self.path}"
 
     def __call__(self, *args, **kwargs):
-        cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.returncode)
-        return xform(subprocess.run(cmd, **kwargs))
+        return self.style(self, *args, **kwargs)
 
-    def __getitem__(self, style):
-        if style is print:
-            return self.print
-        elif style is exec:
-            return self.exec
-        elif style is bg:
-            return self.bg
-        elif style is tee:
-            return self.tee
-        else:
-            raise Exception(style)
-
-    @contextmanager
     def bg(self, *args, **kwargs):
-        cmd, kwargs, xform = self._transform(args, kwargs, lambda res: res.wait)
-        check = kwargs.pop('check')
-        try:
-            with subprocess.Popen(cmd, **kwargs) as process:
-                yield xform(process)
-        finally:
-            if check and process.returncode:
-                raise subprocess.CalledProcessError(process.returncode, cmd)
+        return bgstyle(self, *args, **kwargs)
 
     def print(self, *args, **kwargs): # TODO LATER: Allow as non-terminal subcommand.
-        return self(*args, **kwargs, stdout = None)
+        return printstyle(self, *args, **kwargs)
 
     def tee(self, *args, **kwargs):
-        def lines():
-            with self[bg](*args, **kwargs) as stdout:
-                while True:
-                    line = stdout.readline()
-                    if not line:
-                        break
-                    yield line
-                    sys.stdout.write(line)
-        return ''.join(lines())
+        return teestyle(self, *args, **kwargs)
 
     def exec(self, *args, **kwargs):
-        supportedkeys = {'cwd', 'env'}
-        keys = kwargs.keys()
-        if not keys <= supportedkeys:
-            raise Exception("Unsupported keywords: %s" % (keys - supportedkeys))
-        cmd, kwargs, _ = self._transform(args, kwargs, None)
-        cwd, env = (kwargs[k] for k in ['cwd', 'env'])
-        if cwd is None:
-            os.execvpe(cmd[0], cmd, env)
-        # First replace this program so that failure can't be caught after chdir:
-        precmd = [sys.executable, '-c', 'import os, sys; cwd, *cmd = sys.argv[1:]; os.chdir(cwd); os.execvp(cmd[0], cmd)', cwd, *cmd]
-        os.execve(precmd[0], precmd, os.environ if env is None else env)
+        return execstyle(self, *args, **kwargs)
+
+def stdoutstyle(program, *args, **kwargs):
+    cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
+    return xform(subprocess.run(cmd, **kwargs))
+
+@contextmanager
+def bgstyle(program, *args, **kwargs):
+    cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.wait)
+    check = kwargs.pop('check')
+    try:
+        with subprocess.Popen(cmd, **kwargs) as process:
+            yield xform(process)
+    finally:
+        if check and process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
+
+def printstyle(program, *args, **kwargs):
+    return stdoutstyle(program, *args, **kwargs, stdout = None)
+
+def teestyle(program, *args, **kwargs):
+    def lines():
+        with program[bg](*args, **kwargs) as stdout:
+            while True:
+                line = stdout.readline()
+                if not line:
+                    break
+                yield line
+                sys.stdout.write(line)
+    return ''.join(lines())
+
+def execstyle(program, *args, **kwargs):
+    supportedkeys = {'cwd', 'env'}
+    keys = kwargs.keys()
+    if not keys <= supportedkeys:
+        raise Exception("Unsupported keywords: %s" % (keys - supportedkeys))
+    cmd, kwargs, _ = program._transform(args, kwargs, None)
+    cwd, env = (kwargs[k] for k in ['cwd', 'env'])
+    if cwd is None:
+        os.execvpe(cmd[0], cmd, env)
+    # First replace this program so that failure can't be caught after chdir:
+    precmd = [sys.executable, '-c', 'import os, sys; cwd, *cmd = sys.argv[1:]; os.chdir(cwd); os.execvp(cmd[0], cmd)', cwd, *cmd]
+    os.execve(precmd[0], precmd, os.environ if env is None else env)
+
+bg = object()
+tee = object()
+styles = {
+    bg: bgstyle,
+    exec: execstyle,
+    print: printstyle,
+    tee: teestyle,
+}
