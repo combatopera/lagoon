@@ -21,7 +21,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from keyword import iskeyword
 from pathlib import Path
-import os, re, subprocess, sys
+import functools, os, re, subprocess, sys
 
 class Program:
 
@@ -210,6 +210,7 @@ tee = object()
 styles = {
     bg: bgstyle,
     exec: execstyle,
+    functools.partial: partialstyle,
     partial: partialstyle,
     print: printstyle,
     tee: teestyle,

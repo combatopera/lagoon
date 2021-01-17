@@ -178,6 +178,12 @@ class TestLagoon(TestCase):
         git = bash._c[partial]('git "$@"', 'git')
         self.assertEqual('', git.rev_parse())
 
+    def test_altpartial(self):
+        from . import echo
+        from functools import partial
+        woo = echo[partial]('woo')
+        self.assertEqual('woo\n', woo())
+
     def test_stylepartial(self):
         from . import echo
         bgecho = echo[bg][partial]('woo')
