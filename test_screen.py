@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from screen import Stuff, stuffablescreen
-from pathlib import Path
 from contextlib import contextmanager
-import os, tempfile, unittest
+from pathlib import Path
+from screen import Stuff, stuffablescreen
+from tempfile import TemporaryDirectory
+from unittest import TestCase
+import os
 
 stufftemplate = r'''plain old line
 do not interpolate any of these: $USER ${USER} '$USER' '${USER}' x
@@ -31,7 +33,7 @@ arbitrary text: %s x
 """
 basestufftext = stufftemplate % ''
 
-class TestScreen(unittest.TestCase):
+class TestScreen(TestCase):
 
     maxDiff = None
 
@@ -54,7 +56,7 @@ class TestScreen(unittest.TestCase):
 
     def setUp(self):
         self.expected = ['consume this']
-        self._tempdir = tempfile.TemporaryDirectory()
+        self._tempdir = TemporaryDirectory()
         self.dirpath = Path(self._tempdir.name)
 
     def tearDown(self):

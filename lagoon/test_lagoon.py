@@ -20,12 +20,14 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from signal import SIGTERM
-import os, stat, subprocess, sys, tempfile, unittest
+from tempfile import TemporaryDirectory, TemporaryFile
+from unittest import TestCase
+import os, stat, subprocess, sys
 
 def _env(items):
     return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
 
-class TestLagoon(unittest.TestCase):
+class TestLagoon(TestCase):
 
     def test_nosuchprogram(self):
         def imp():
@@ -90,7 +92,7 @@ class TestLagoon(unittest.TestCase):
         from . import diff
         text1 = 'Hark, planet!\n'
         text2 = 'xyz\n'
-        with tempfile.TemporaryDirectory() as d:
+        with TemporaryDirectory() as d:
             p1 = Path(d, 'text1')
             p2 = Path(d, 'text2')
             with p1.open('w') as f1:
@@ -252,7 +254,7 @@ class TestLagoon(unittest.TestCase):
 
     def test_stdoutclash(self):
         from . import echo
-        with tempfile.TemporaryFile() as f:
+        with TemporaryFile() as f:
             with self.assertRaises(TypeError):
                 echo.print('hmm', stdout = f)
             echo('hmm', stdout = f)
@@ -260,7 +262,7 @@ class TestLagoon(unittest.TestCase):
             self.assertEqual(b'hmm\n', f.read())
 
     def test_nameorrelpath(self):
-        with tempfile.TemporaryDirectory() as d:
+        with TemporaryDirectory() as d:
             localecho = Path(d, 'echo')
             localecho.write_text('#!/bin/bash\necho LOCAL "$@"\n')
             localecho.chmod(localecho.stat().st_mode | stat.S_IXUSR)
@@ -274,7 +276,7 @@ class TestLagoon(unittest.TestCase):
             self.assertEqual('LOCAL hmm\n', fireexec('''Program.text(Path('echo'))'''))
 
     def test_execcwd(self):
-        with tempfile.TemporaryDirectory() as d:
+        with TemporaryDirectory() as d:
             self.assertEqual(f"{os.getcwd()}\n", Program.text(sys.executable)._c('from lagoon import pwd\npwd.exec()'))
             self.assertEqual(f"{d}\n", Program.text(sys.executable)._c("from lagoon import pwd\npwd.exec(cwd = %r)" % d))
 
