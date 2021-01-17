@@ -23,13 +23,13 @@ from keyword import iskeyword
 from pathlib import Path
 import functools, os, re, subprocess, sys
 
-class Program:
+unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
-    unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
+class Program:
 
     @classmethod
     def _importableornone(cls, anyname):
-        name = cls.unimportablechars.sub('_', anyname)
+        name = unimportablechars.sub('_', anyname)
         if name.isidentifier() and not iskeyword(name):
             return name
 
