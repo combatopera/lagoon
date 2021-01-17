@@ -16,10 +16,11 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from lagoon import screen
+from lagoon.program import partial
 import re
 
 def stuffablescreen(doublequotekey):
-    return screen.partial(env = {doublequotekey: '"'})
+    return screen[partial](env = {doublequotekey: '"'})
 
 class Stuff:
 

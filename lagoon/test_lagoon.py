@@ -18,6 +18,7 @@
 from .program import bg, Program, tee
 from contextlib import redirect_stdout
 from io import StringIO
+from lagoon.program import partial
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
@@ -159,7 +160,7 @@ class TestLagoon(TestCase):
 
     def test_partial(self):
         from . import expr
-        test100 = expr.partial(100, check = False)
+        test100 = expr[partial](100, check = False)
         cp = test100('=', '100')
         self.assertEqual('1\n', cp.stdout)
         self.assertEqual(0, cp.returncode)
@@ -174,8 +175,20 @@ class TestLagoon(TestCase):
 
     def test_partial2(self):
         from . import bash
-        git = bash._c.partial('git "$@"', 'git')
+        git = bash._c[partial]('git "$@"', 'git')
         self.assertEqual('', git.rev_parse())
+
+    def test_stylepartial(self):
+        from . import echo
+        bgecho = echo[bg][partial]('woo')
+        with bgecho() as stdout:
+            self.assertEqual('woo\n', stdout.read())
+
+    def test_stylepartial2(self):
+        from . import echo
+        bgecho = echo[bg, partial]('woo')
+        with bgecho() as stdout:
+            self.assertEqual('woo\n', stdout.read())
 
     def test_env(self):
         from . import env
@@ -207,8 +220,8 @@ class TestLagoon(TestCase):
 
     def test_partialenv(self):
         from . import env
-        partial1 = env.partial(env = dict(PATH = 'x'))
-        partial2 = env.partial(env = dict(TestLagoon = 'y'))
+        partial1 = env[partial](env = dict(PATH = 'x'))
+        partial2 = env[partial](env = dict(TestLagoon = 'y'))
         # Not specifying an env means use the partial one:
         self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=x'},
                 set(partial1().splitlines()))
@@ -219,10 +232,10 @@ class TestLagoon(TestCase):
         self.assertEqual(_env(os.environ.items()) | {'TestLagoon=y'},
                 set(partial2(env = None).splitlines()))
         # Specified env is merged with partial env:
-        def direct(partial, env):
-            return partial(env = env)
-        def indirect(partial, env):
-            return partial.partial(env = env)()
+        def direct(part, env):
+            return part(env = env)
+        def indirect(part, env):
+            return part[partial](env = env)()
         for method in direct, indirect:
             self.assertEqual(_env((k, v) for k, v in os.environ.items() if k != 'PATH') | {'PATH=x', 'TestLagoon=y'},
                     set(method(partial1, dict(TestLagoon = 'y')).splitlines()))

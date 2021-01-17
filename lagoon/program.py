@@ -68,34 +68,32 @@ class Program:
 
     @classmethod
     def text(cls, path):
-        return cls(path, True, None, (), {}, stdoutstyle)
+        return cls(path, True, None, (), {}, [stdoutstyle])
 
     @classmethod
     def binary(cls, path):
-        return cls(path, None, None, (), {}, stdoutstyle)
+        return cls(path, None, None, (), {}, [stdoutstyle])
 
-    def __init__(self, path, textmode, cwd, args, kwargs, style):
+    def __init__(self, path, textmode, cwd, args, kwargs, styles):
         self.path = path
         self.textmode = textmode
         self.cwd = cwd
         self.args = args
         self.kwargs = kwargs
-        self.style = style
+        self.styles = styles
 
     def _resolve(self, path):
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return type(self)(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.style)
+        return type(self)(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.styles)
 
     def __getattr__(self, name):
-        return type(self)(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.style)
+        return type(self)(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.styles)
 
-    def partial(self, *args, **kwargs):
-        return type(self)(self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.style)
-
-    def __getitem__(self, style):
-        return type(self)(self.path, self.textmode, self.cwd, self.args, self.kwargs, styles[style])
+    def __getitem__(self, key):
+        stylekeys = key if isinstance(key, tuple) else [key]
+        return type(self)(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + [styles[k] for k in stylekeys])
 
     def _mergedkwargs(self, kwargs):
         merged = {**self.kwargs, **kwargs}
@@ -159,7 +157,10 @@ class Program:
         return self.path if is_absolute() else f"{os.curdir}{os.sep}{self.path}"
 
     def __call__(self, *args, **kwargs):
-        return self.style(self, *args, **kwargs)
+        return self.styles[-1](self, *args, **kwargs)
+
+def partialstyle(program, *args, **kwargs):
+    return type(program)(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
 
 def stdoutstyle(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
@@ -204,10 +205,12 @@ def execstyle(program, *args, **kwargs):
     os.execve(precmd[0], precmd, os.environ if env is None else env)
 
 bg = object()
+partial = object()
 tee = object()
 styles = {
     bg: bgstyle,
     exec: execstyle,
+    partial: partialstyle,
     print: printstyle,
     tee: teestyle,
 }
