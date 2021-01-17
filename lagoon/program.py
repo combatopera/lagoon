@@ -67,11 +67,11 @@ class Program:
 
     @classmethod
     def text(cls, path):
-        return cls(path, True, None, (), {}, [stdoutstyle])
+        return cls(path, True, None, (), {}, (stdoutstyle,))
 
     @classmethod
     def binary(cls, path):
-        return cls(path, None, None, (), {}, [stdoutstyle])
+        return cls(path, None, None, (), {}, (stdoutstyle,))
 
     def __init__(self, path, textmode, cwd, args, kwargs, styles):
         self.path = path
@@ -92,7 +92,7 @@ class Program:
 
     def __getitem__(self, key):
         stylekeys = key if isinstance(key, tuple) else [key]
-        return type(self)(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + [styles[k] for k in stylekeys])
+        return type(self)(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + tuple(styles[k] for k in stylekeys))
 
     def _mergedkwargs(self, kwargs):
         merged = {**self.kwargs, **kwargs}
