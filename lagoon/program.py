@@ -161,18 +161,6 @@ class Program:
     def __call__(self, *args, **kwargs):
         return self.style(self, *args, **kwargs)
 
-    def bg(self, *args, **kwargs):
-        return bgstyle(self, *args, **kwargs)
-
-    def print(self, *args, **kwargs): # TODO LATER: Allow as non-terminal subcommand.
-        return printstyle(self, *args, **kwargs)
-
-    def tee(self, *args, **kwargs):
-        return teestyle(self, *args, **kwargs)
-
-    def exec(self, *args, **kwargs):
-        return execstyle(self, *args, **kwargs)
-
 def stdoutstyle(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
     return xform(subprocess.run(cmd, **kwargs))
