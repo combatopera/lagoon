@@ -25,6 +25,17 @@ import functools, os, re, subprocess, sys
 
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
+def scan(modulename):
+    programs = {}
+    for parent in os.environ['PATH'].split(os.pathsep):
+        if os.path.isdir(parent):
+            for name in os.listdir(parent):
+                if name not in programs:
+                    programs[name] = os.path.join(parent, name)
+    module = sys.modules[modulename]
+    delattr(module, scan.__name__)
+    Program._scan(module, binary, programs)
+
 class Program:
 
     @classmethod
@@ -36,18 +47,6 @@ class Program:
     @staticmethod
     def _strornone(arg):
         return arg if arg is None else str(arg)
-
-    @classmethod
-    def scan(cls, modulename):
-        programs = {}
-        for parent in os.environ['PATH'].split(os.pathsep):
-            if os.path.isdir(parent):
-                for name in os.listdir(parent):
-                    if name not in programs:
-                        programs[name] = os.path.join(parent, name)
-        module = sys.modules[modulename]
-        delattr(module, cls.__name__)
-        cls._scan(module, binary, programs)
 
     @classmethod
     def _scan(cls, module, binary, programs):
