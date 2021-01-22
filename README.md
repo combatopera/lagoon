@@ -1,6 +1,14 @@
 # lagoon
 Concise layer on top of subprocess, similar to sh project
 
+## Support
+If you see an error along the lines of:
+```
+ImportError: cannot import name 'zyx' from 'lagoon'
+```
+This means the app requires command `zyx` to be available, and you don't have it on your system.
+The solution is to install `zyx` in the usual way, e.g. via your package manager.
+
 ## Install
 These are generic installation instructions.
 
