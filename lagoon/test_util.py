@@ -80,6 +80,19 @@ class TestAtomic(TestCase):
                     self.assertFalse(q.exists())
                     self.assertEqual('doc\n', p.read_text())
 
+    def test_symlink(self):
+        with TemporaryDirectory() as d:
+            d = Path(d)
+            target = 'target'
+            (d / target).write_text('data')
+            link = d / 'link'
+            link.symlink_to('null')
+            with self.assertRaises(FileExistsError):
+                link.symlink_to(target)
+            with atomic(link) as l:
+                l.symlink_to(target)
+            self.assertEqual('data', link.read_text())
+
     def test_fail(self):
         class X(Exception): pass
         with TemporaryDirectory() as d:
