@@ -190,7 +190,7 @@ def teestyle(program, *args, **kwargs):
                 sys.stdout.write(line)
     return ''.join(lines())
 
-def execstyle(program, *args, **kwargs):
+def execstyle(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     supportedkeys = {'cwd', 'env'}
     keys = kwargs.keys()
     if not keys <= supportedkeys:
