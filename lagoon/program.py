@@ -163,7 +163,7 @@ class Program:
     def __call__(self, *args, **kwargs):
         return self.styles[-1](self, *args, **kwargs)
 
-def partialstyle(program, *args, **kwargs):
+def _partialstyle(program, *args, **kwargs):
     return program._of(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
 
 def stdoutstyle(program, *args, **kwargs):
@@ -171,7 +171,7 @@ def stdoutstyle(program, *args, **kwargs):
     return xform(subprocess.run(cmd, **kwargs))
 
 @contextmanager
-def bgstyle(program, *args, **kwargs):
+def _bgstyle(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.wait)
     check = kwargs.pop('check')
     try:
@@ -181,10 +181,10 @@ def bgstyle(program, *args, **kwargs):
         if check and process.returncode:
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
-def printstyle(program, *args, **kwargs):
+def _printstyle(program, *args, **kwargs):
     return stdoutstyle(program, *args, **kwargs, stdout = None)
 
-def teestyle(program, *args, **kwargs):
+def _teestyle(program, *args, **kwargs):
     def lines():
         with program[bg](*args, **kwargs) as stdout:
             while True:
@@ -195,7 +195,7 @@ def teestyle(program, *args, **kwargs):
                 sys.stdout.write(line)
     return ''.join(lines())
 
-def execstyle(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
+def _execstyle(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     supportedkeys = {'cwd', 'env'}
     keys = kwargs.keys()
     if not keys <= supportedkeys:
@@ -212,10 +212,10 @@ bg = object()
 partial = object()
 tee = object()
 styles = {
-    bg: bgstyle,
-    exec: execstyle,
-    functools.partial: partialstyle,
-    partial: partialstyle,
-    print: printstyle,
-    tee: teestyle,
+    bg: _bgstyle,
+    exec: _execstyle,
+    functools.partial: _partialstyle,
+    partial: _partialstyle,
+    print: _printstyle,
+    tee: _teestyle,
 }
