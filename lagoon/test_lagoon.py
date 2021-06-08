@@ -209,15 +209,9 @@ class TestLagoon(TestCase):
         self.assertEqual('woo yay houpla\n', echo[partial, partial]('woo')('yay')('houpla'))
 
     def test_partialprint(self):
-        from . import echo
-        with _getstdout() as f:
-            result = echo[print, partial]('woo')('yay')
-        self.assertIs(None, result)
-        self.assertEqual('woo yay\n', f.getvalue())
-        with _getstdout() as f:
-            result = echo[partial, print]('woo')('yay')
-        self.assertIs(None, result)
-        self.assertEqual('woo yay\n', f.getvalue())
+        python = Program.text(sys.executable)
+        self.assertEqual('woo yay\n', python._c('''from lagoon import echo\nfrom lagoon.program import partial\necho[print, partial]('woo')('yay')'''))
+        self.assertEqual('woo yay\n', python._c('''from lagoon import echo\nfrom lagoon.program import partial\necho[partial, print]('woo')('yay')'''))
 
     def test_env(self):
         from . import env
