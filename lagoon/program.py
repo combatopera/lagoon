@@ -95,8 +95,9 @@ class Program:
         return self._of(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.styles)
 
     def __getitem__(self, key):
-        stylekeys = key if isinstance(key, tuple) else [key]
-        return self._of(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + tuple(styles[k] for k in stylekeys))
+        for style in (styles[k] for k in (key if isinstance(key, tuple) else [key])):
+            self = self._of(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + (style,))
+        return self
 
     def _mergedkwargs(self, kwargs):
         merged = {**self.kwargs, **kwargs}
