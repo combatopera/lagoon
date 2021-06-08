@@ -196,6 +196,12 @@ class TestLagoon(TestCase):
         with bgecho() as stdout:
             self.assertEqual('woo\n', stdout.read())
 
+    def test_multipartial(self):
+        from . import echo
+        self.assertEqual('woo yay houpla\n', echo[partial]('woo')[partial]('yay')('houpla'))
+        self.assertEqual('woo yay houpla\n', echo[partial][partial]('woo')('yay')('houpla'))
+        self.assertEqual('woo yay houpla\n', echo[partial, partial]('woo')('yay')('houpla'))
+
     def test_env(self):
         from . import env
         # Consistency with regular subprocess:
