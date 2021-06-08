@@ -213,6 +213,11 @@ class TestLagoon(TestCase):
         self.assertEqual('woo yay\n', python._c('''from lagoon import echo\nfrom lagoon.program import partial\necho[print, partial]('woo')('yay')'''))
         self.assertEqual('woo yay\n', python._c('''from lagoon import echo\nfrom lagoon.program import partial\necho[partial, print]('woo')('yay')'''))
 
+    def test_bgprint(self):
+        python = Program.text(sys.executable)
+        self.assertEqual('woo\n', python._c('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[print, bg].woo(): pass'''))
+        self.assertEqual('woo\n', python._c('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'''))
+
     def test_env(self):
         from . import env
         # Consistency with regular subprocess:
