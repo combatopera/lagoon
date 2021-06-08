@@ -296,11 +296,10 @@ class TestLagoon(TestCase):
     def test_stdoutclash(self):
         from . import echo
         with TemporaryFile() as f:
-            with self.assertRaises(TypeError):
-                echo[print]('hmm', stdout = f)
+            echo[print]('override', stdout = f)
             echo('hmm', stdout = f)
             f.seek(0)
-            self.assertEqual(b'hmm\n', f.read())
+            self.assertEqual(b'override\nhmm\n', f.read())
 
     def test_nameorrelpath(self):
         with TemporaryDirectory() as d:

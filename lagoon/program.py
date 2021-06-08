@@ -71,32 +71,33 @@ class Program:
 
     @classmethod
     def text(cls, path):
-        return cls(path, True, None, (), {}, (_fgmode,))
+        return cls(path, True, None, (), {}, _fgmode, 0)
 
     @classmethod
     def binary(cls, path):
-        return cls(path, None, None, (), {}, (_fgmode,))
+        return cls(path, None, None, (), {}, _fgmode, 0)
 
-    def __init__(self, path, textmode, cwd, args, kwargs, styles):
+    def __init__(self, path, textmode, cwd, args, kwargs, runmode, ttl):
         self.path = path
         self.textmode = textmode
         self.cwd = cwd
         self.args = args
         self.kwargs = kwargs
-        self.styles = styles
+        self.runmode = runmode
+        self.ttl = ttl
 
     def _resolve(self, path):
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return self._of(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.styles)
+        return self._of(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.runmode, self.ttl)
 
     def __getattr__(self, name):
-        return self._of(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.styles)
+        return self._of(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.runmode, self.ttl)
 
     def __getitem__(self, key):
         for style in (styles[k] for k in (key if isinstance(key, tuple) else [key])):
-            self = self._of(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + (style,))
+            self = style(self)
         return self
 
     def _mergedkwargs(self, kwargs):
@@ -161,14 +162,19 @@ class Program:
         return self.path if is_absolute() else f"{os.curdir}{os.sep}{self.path}"
 
     def __call__(self, *args, **kwargs):
-        return self.styles[-1](self, *args, **kwargs)
+        if self.ttl:
+            return self._of(self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
+        return self.runmode(self, *args, **kwargs)
 
-def _partialstyle(program, *args, **kwargs):
-    return program._of(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
+def _partialstyle(program):
+    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, program.runmode, program.ttl + 1)
 
 def _fgmode(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
     return xform(subprocess.run(cmd, **kwargs))
+
+def _bgstyle(program):
+    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, _bgmode, program.ttl)
 
 @contextmanager
 def _bgmode(program, *args, **kwargs):
@@ -181,8 +187,11 @@ def _bgmode(program, *args, **kwargs):
         if check and process.returncode:
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
-def _printstyle(program, *args, **kwargs):
-    return _fgmode(program, *args, **kwargs, stdout = None)
+def _printstyle(program):
+    return program._of(program.path, program.textmode, program.cwd, program.args, program._mergedkwargs(dict(stdout = None)), program.runmode, program.ttl)
+
+def _teestyle(program):
+    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, _teemode, program.ttl)
 
 def _teemode(program, *args, **kwargs):
     def lines():
@@ -194,6 +203,9 @@ def _teemode(program, *args, **kwargs):
                 yield line
                 sys.stdout.write(line)
     return ''.join(lines())
+
+def _execstyle(program):
+    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, _execmode, program.ttl)
 
 def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     supportedkeys = {'cwd', 'env'}
@@ -212,10 +224,10 @@ bg = object()
 partial = object()
 tee = object()
 styles = {
-    bg: _bgmode,
-    exec: _execmode,
+    bg: _bgstyle,
+    exec: _execstyle,
     functools.partial: _partialstyle,
     partial: _partialstyle,
     print: _printstyle,
-    tee: _teemode,
+    tee: _teestyle,
 }
