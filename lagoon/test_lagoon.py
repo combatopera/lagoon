@@ -16,7 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from .program import bg, Program, tee
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 from io import StringIO
 from lagoon.program import partial
 from pathlib import Path
@@ -27,6 +27,12 @@ import os, stat, subprocess, sys
 
 def _env(items):
     return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
+
+@contextmanager
+def _getstdout():
+    f = StringIO()
+    with redirect_stdout(f):
+        yield f
 
 class TestLagoon(TestCase):
 
@@ -202,6 +208,17 @@ class TestLagoon(TestCase):
         self.assertEqual('woo yay houpla\n', echo[partial][partial]('woo')('yay')('houpla'))
         self.assertEqual('woo yay houpla\n', echo[partial, partial]('woo')('yay')('houpla'))
 
+    def test_partialprint(self):
+        from . import echo
+        with _getstdout() as f:
+            result = echo[print, partial]('woo')('yay')
+        self.assertIs(None, result)
+        self.assertEqual('woo yay\n', f.getvalue())
+        with _getstdout() as f:
+            result = echo[partial, print]('woo')('yay')
+        self.assertIs(None, result)
+        self.assertEqual('woo yay\n', f.getvalue())
+
     def test_env(self):
         from . import env
         # Consistency with regular subprocess:
@@ -271,8 +288,7 @@ class TestLagoon(TestCase):
 
     def test_tee(self):
         from . import echo
-        f = StringIO()
-        with redirect_stdout(f):
+        with _getstdout() as f:
             result = echo[tee]('woo')
         self.assertEqual('woo\n', result)
         self.assertEqual('woo\n', f.getvalue())
