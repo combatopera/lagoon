@@ -39,6 +39,10 @@ def scan(modulename):
 class Program:
 
     @classmethod
+    def _of(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
+
+    @classmethod
     def _importableornone(cls, anyname):
         name = unimportablechars.sub('_', anyname)
         if name.isidentifier() and not iskeyword(name):
@@ -85,14 +89,14 @@ class Program:
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return type(self)(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.styles)
+        return self._of(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.styles)
 
     def __getattr__(self, name):
-        return type(self)(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.styles)
+        return self._of(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.styles)
 
     def __getitem__(self, key):
         stylekeys = key if isinstance(key, tuple) else [key]
-        return type(self)(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + tuple(styles[k] for k in stylekeys))
+        return self._of(self.path, self.textmode, self.cwd, self.args, self.kwargs, self.styles + tuple(styles[k] for k in stylekeys))
 
     def _mergedkwargs(self, kwargs):
         merged = {**self.kwargs, **kwargs}
@@ -159,7 +163,7 @@ class Program:
         return self.styles[-1](self, *args, **kwargs)
 
 def partialstyle(program, *args, **kwargs):
-    return type(program)(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
+    return program._of(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
 
 def stdoutstyle(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
