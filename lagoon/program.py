@@ -71,11 +71,11 @@ class Program:
 
     @classmethod
     def text(cls, path):
-        return cls(path, True, None, (), {}, (stdoutstyle,))
+        return cls(path, True, None, (), {}, (_stdoutstyle,))
 
     @classmethod
     def binary(cls, path):
-        return cls(path, None, None, (), {}, (stdoutstyle,))
+        return cls(path, None, None, (), {}, (_stdoutstyle,))
 
     def __init__(self, path, textmode, cwd, args, kwargs, styles):
         self.path = path
@@ -166,7 +166,7 @@ class Program:
 def _partialstyle(program, *args, **kwargs):
     return program._of(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
 
-def stdoutstyle(program, *args, **kwargs):
+def _stdoutstyle(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
     return xform(subprocess.run(cmd, **kwargs))
 
@@ -182,7 +182,7 @@ def _bgstyle(program, *args, **kwargs):
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
 def _printstyle(program, *args, **kwargs):
-    return stdoutstyle(program, *args, **kwargs, stdout = None)
+    return _stdoutstyle(program, *args, **kwargs, stdout = None)
 
 def _teestyle(program, *args, **kwargs):
     def lines():
