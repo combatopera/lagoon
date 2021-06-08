@@ -71,11 +71,11 @@ class Program:
 
     @classmethod
     def text(cls, path):
-        return cls(path, True, None, (), {}, (_stdoutstyle,))
+        return cls(path, True, None, (), {}, (_fgmode,))
 
     @classmethod
     def binary(cls, path):
-        return cls(path, None, None, (), {}, (_stdoutstyle,))
+        return cls(path, None, None, (), {}, (_fgmode,))
 
     def __init__(self, path, textmode, cwd, args, kwargs, styles):
         self.path = path
@@ -166,12 +166,12 @@ class Program:
 def _partialstyle(program, *args, **kwargs):
     return program._of(program.path, program.textmode, program.cwd, program.args + args, program._mergedkwargs(kwargs), program.styles[:-1])
 
-def _stdoutstyle(program, *args, **kwargs):
+def _fgmode(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
     return xform(subprocess.run(cmd, **kwargs))
 
 @contextmanager
-def _bgstyle(program, *args, **kwargs):
+def _bgmode(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.wait)
     check = kwargs.pop('check')
     try:
@@ -182,9 +182,9 @@ def _bgstyle(program, *args, **kwargs):
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
 def _printstyle(program, *args, **kwargs):
-    return _stdoutstyle(program, *args, **kwargs, stdout = None)
+    return _fgmode(program, *args, **kwargs, stdout = None)
 
-def _teestyle(program, *args, **kwargs):
+def _teemode(program, *args, **kwargs):
     def lines():
         with program[bg](*args, **kwargs) as stdout:
             while True:
@@ -195,7 +195,7 @@ def _teestyle(program, *args, **kwargs):
                 sys.stdout.write(line)
     return ''.join(lines())
 
-def _execstyle(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
+def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     supportedkeys = {'cwd', 'env'}
     keys = kwargs.keys()
     if not keys <= supportedkeys:
@@ -212,10 +212,10 @@ bg = object()
 partial = object()
 tee = object()
 styles = {
-    bg: _bgstyle,
-    exec: _execstyle,
+    bg: _bgmode,
+    exec: _execmode,
     functools.partial: _partialstyle,
     partial: _partialstyle,
     print: _printstyle,
-    tee: _teestyle,
+    tee: _teemode,
 }
