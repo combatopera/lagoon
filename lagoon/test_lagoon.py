@@ -18,7 +18,7 @@
 from .program import bg, Program, tee
 from contextlib import redirect_stdout
 from io import StringIO
-from lagoon.program import partial
+from lagoon.program import NOEOL, ONELINE, partial
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
@@ -325,3 +325,16 @@ class TestLagoon(TestCase):
         with sleep.inf[bg](stdout = None, aux = 'terminate', check = False) as p:
             p.terminate()
             self.assertEqual(-SIGTERM, p.wait())
+
+    def test_noeol(self):
+        from . import echo
+        self.assertEqual('woo', echo.woo[NOEOL]())
+        self.assertEqual('woo', echo.woo(stdout = NOEOL))
+        self.assertEqual('woo', Program.text(sys.executable)._c[print]('''import sys\nprint('woo', file = sys.stderr)''', stderr = NOEOL))
+
+    def test_oneline(self):
+        from . import echo
+        self.assertEqual('woo', echo.woo[ONELINE]())
+        self.assertEqual('woo', echo.woo(stdout = ONELINE))
+        self.assertEqual('woo', Program.text(sys.executable)._c[print]('''import sys\nprint('woo', file = sys.stderr)''', stderr = ONELINE))
+        echo[ONELINE]('woo\nyay')

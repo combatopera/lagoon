@@ -186,8 +186,8 @@ def _bgmode(program, *args, **kwargs):
         if check and process.returncode:
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
-def _printstyle(program):
-    return program[partial](stdout = None)
+def _stdoutstyle(token):
+    return lambda program: program[partial](stdout = token)
 
 def _teestyle(program):
     return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, _teemode, program.ttl)
@@ -220,13 +220,17 @@ def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     os.execve(precmd[0], precmd, os.environ if env is None else env)
 
 bg = object()
+NOEOL = object()
+ONELINE = object()
 partial = object()
 tee = object()
 styles = {
     bg: _bgstyle,
     exec: _execstyle,
     functools.partial: _partialstyle,
+    NOEOL: _stdoutstyle(NOEOL),
+    ONELINE: _stdoutstyle(ONELINE),
     partial: _partialstyle,
-    print: _printstyle,
+    print: _stdoutstyle(None),
     tee: _teestyle,
 }
