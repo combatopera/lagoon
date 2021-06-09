@@ -39,10 +39,6 @@ def scan(modulename):
 class Program:
 
     @classmethod
-    def _of(cls, *args, **kwargs):
-        return cls(*args, **kwargs)
-
-    @classmethod
     def _importableornone(cls, anyname):
         name = unimportablechars.sub('_', anyname)
         if name.isidentifier() and not iskeyword(name):
@@ -90,10 +86,10 @@ class Program:
         return Path(path) if self.cwd is None else self.cwd / path
 
     def cd(self, cwd):
-        return self._of(self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.runmode, self.ttl)
+        return _of(self, self.path, self.textmode, self._resolve(cwd), self.args, self.kwargs, self.runmode, self.ttl)
 
     def __getattr__(self, name):
-        return self._of(self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.runmode, self.ttl)
+        return _of(self, self.path, self.textmode, self.cwd, self.args + (unmangle(name).replace('_', '-'),), self.kwargs, self.runmode, self.ttl)
 
     def __getitem__(self, key):
         for style in (styles[k] for k in (key if isinstance(key, tuple) else [key])):
@@ -163,18 +159,21 @@ class Program:
 
     def __call__(self, *args, **kwargs):
         if self.ttl:
-            return self._of(self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
+            return _of(self, self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
         return self.runmode(self, *args, **kwargs)
 
+def _of(program, *args, **kwargs):
+    return type(program)(*args, **kwargs)
+
 def _partialstyle(program):
-    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, program.runmode, program.ttl + 1)
+    return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, program.runmode, program.ttl + 1)
 
 def _fgmode(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
     return xform(subprocess.run(cmd, **kwargs))
 
 def _bgstyle(program):
-    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, _bgmode, program.ttl)
+    return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, _bgmode, program.ttl)
 
 @contextmanager
 def _bgmode(program, *args, **kwargs):
@@ -188,10 +187,10 @@ def _bgmode(program, *args, **kwargs):
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
 def _printstyle(program):
-    return program._of(program.path, program.textmode, program.cwd, program.args, program._mergedkwargs(dict(stdout = None)), program.runmode, program.ttl)
+    return _of(program, program.path, program.textmode, program.cwd, program.args, program._mergedkwargs(dict(stdout = None)), program.runmode, program.ttl)
 
 def _teestyle(program):
-    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, _teemode, program.ttl)
+    return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, _teemode, program.ttl)
 
 def _teemode(program, *args, **kwargs):
     def lines():
@@ -205,7 +204,7 @@ def _teemode(program, *args, **kwargs):
     return ''.join(lines())
 
 def _execstyle(program):
-    return program._of(program.path, program.textmode, program.cwd, program.args, program.kwargs, _execmode, program.ttl)
+    return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, _execmode, program.ttl)
 
 def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     supportedkeys = {'cwd', 'env'}
