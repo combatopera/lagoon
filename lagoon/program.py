@@ -174,8 +174,8 @@ class Program:
             return _of(self, self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
         return self.runmode(self, *args, **kwargs)
 
-def NOEOL(text):
-    return text[:re.search(r'[\r\n]*$', text).start()]
+def NOEOL(text, trailingnewlines = re.compile(r'[\r\n]*$')):
+    return text[:trailingnewlines.search(text).start()]
 
 def ONELINE(text):
     l, = text.splitlines()
