@@ -328,12 +328,14 @@ class TestLagoon(TestCase):
 
     def test_noeol(self):
         from . import echo
+        self.assertEqual('woo', echo._n.woo[NOEOL]())
         self.assertEqual('woo', echo.woo[NOEOL]())
         self.assertEqual('woo', echo.woo(stdout = NOEOL))
         self.assertEqual('woo', Program.text(sys.executable)._c[print]('''import sys\nprint('woo', file = sys.stderr)''', stderr = NOEOL))
 
     def test_oneline(self):
         from . import echo
+        self.assertEqual('woo', echo._n.woo[ONELINE]())
         self.assertEqual('woo', echo.woo[ONELINE]())
         self.assertEqual('woo', echo.woo(stdout = ONELINE))
         self.assertEqual('woo', Program.text(sys.executable)._c[print]('''import sys\nprint('woo', file = sys.stderr)''', stderr = ONELINE))
