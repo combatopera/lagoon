@@ -136,18 +136,18 @@ class Program:
                 yield lambda res: res.stdout
             elif kwargs['stdout'] is NOEOL:
                 kwargs['stdout'] = subprocess.PIPE
-                yield lambda res: _noeol(res.stdout)
+                yield lambda res: NOEOL(res.stdout)
             elif kwargs['stdout'] is ONELINE:
                 kwargs['stdout'] = subprocess.PIPE
-                yield lambda res: _oneline(res.stdout)
+                yield lambda res: ONELINE(res.stdout)
             if kwargs['stderr'] == subprocess.PIPE:
                 yield lambda res: res.stderr
             elif kwargs['stderr'] is NOEOL:
                 kwargs['stderr'] = subprocess.PIPE
-                yield lambda res: _noeol(res.stderr)
+                yield lambda res: NOEOL(res.stderr)
             elif kwargs['stderr'] is ONELINE:
                 kwargs['stderr'] = subprocess.PIPE
-                yield lambda res: _oneline(res.stderr)
+                yield lambda res: ONELINE(res.stderr)
             if aux is not None:
                 yield lambda res: getattr(res, aux)
         xforms = xforms()
@@ -174,10 +174,10 @@ class Program:
             return _of(self, self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
         return self.runmode(self, *args, **kwargs)
 
-def _noeol(text):
+def NOEOL(text):
     return text[:re.search(r'[\r\n]*$', text).start()]
 
-def _oneline(text):
+def ONELINE(text):
     l, = text.splitlines()
     return l
 
@@ -239,8 +239,6 @@ def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     os.execve(precmd[0], precmd, os.environ if env is None else env)
 
 bg = object()
-NOEOL = object()
-ONELINE = object()
 partial = object()
 tee = object()
 styles = {
