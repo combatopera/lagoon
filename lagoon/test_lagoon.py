@@ -16,7 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from .program import bg, Program, tee
-from contextlib import contextmanager, redirect_stdout
+from contextlib import redirect_stdout
 from io import StringIO
 from lagoon.program import partial
 from pathlib import Path
@@ -27,12 +27,6 @@ import os, stat, subprocess, sys
 
 def _env(items):
     return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
-
-@contextmanager
-def _getstdout():
-    f = StringIO()
-    with redirect_stdout(f):
-        yield f
 
 class TestLagoon(TestCase):
 
@@ -287,7 +281,8 @@ class TestLagoon(TestCase):
 
     def test_tee(self):
         from . import echo
-        with _getstdout() as f:
+        f = StringIO()
+        with redirect_stdout(f):
             result = echo[tee]('woo')
         self.assertEqual('woo\n', result)
         self.assertEqual('woo\n', f.getvalue())
