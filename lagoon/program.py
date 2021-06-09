@@ -128,26 +128,19 @@ class Program:
             for i, arg in enumerate(args):
                 yield '-' if i in readables else (arg if isinstance(arg, bytes) else str(arg))
         def xforms():
+            def streamxforms(name):
+                val = kwargs[name]
+                if val == subprocess.PIPE:
+                    yield lambda res: getattr(res, name)
+                elif val in {NOEOL, ONELINE}:
+                    kwargs[name] = subprocess.PIPE
+                    yield lambda res: val(getattr(res, name))
             if not kwargs['check']:
                 yield checkxform
             if kwargs.get('stdin') == subprocess.PIPE:
                 yield lambda res: res.stdin
-            if kwargs['stdout'] == subprocess.PIPE:
-                yield lambda res: res.stdout
-            elif kwargs['stdout'] is NOEOL:
-                kwargs['stdout'] = subprocess.PIPE
-                yield lambda res: NOEOL(res.stdout)
-            elif kwargs['stdout'] is ONELINE:
-                kwargs['stdout'] = subprocess.PIPE
-                yield lambda res: ONELINE(res.stdout)
-            if kwargs['stderr'] == subprocess.PIPE:
-                yield lambda res: res.stderr
-            elif kwargs['stderr'] is NOEOL:
-                kwargs['stderr'] = subprocess.PIPE
-                yield lambda res: NOEOL(res.stderr)
-            elif kwargs['stderr'] is ONELINE:
-                kwargs['stderr'] = subprocess.PIPE
-                yield lambda res: ONELINE(res.stderr)
+            for stream in 'stdout', 'stderr':
+                yield from streamxforms(stream)
             if aux is not None:
                 yield lambda res: getattr(res, aux)
         xforms = xforms()
