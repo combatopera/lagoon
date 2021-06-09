@@ -134,8 +134,20 @@ class Program:
                 yield lambda res: res.stdin
             if kwargs['stdout'] == subprocess.PIPE:
                 yield lambda res: res.stdout
+            elif kwargs['stdout'] is NOEOL:
+                kwargs['stdout'] = subprocess.PIPE
+                yield lambda res: _noeol(res.stdout)
+            elif kwargs['stdout'] is ONELINE:
+                kwargs['stdout'] = subprocess.PIPE
+                yield lambda res: _oneline(res.stdout)
             if kwargs['stderr'] == subprocess.PIPE:
                 yield lambda res: res.stderr
+            elif kwargs['stderr'] is NOEOL:
+                kwargs['stderr'] = subprocess.PIPE
+                yield lambda res: _noeol(res.stderr)
+            elif kwargs['stderr'] is ONELINE:
+                kwargs['stderr'] = subprocess.PIPE
+                yield lambda res: _oneline(res.stderr)
             if aux is not None:
                 yield lambda res: getattr(res, aux)
         xforms = xforms()
@@ -161,6 +173,13 @@ class Program:
         if self.ttl:
             return _of(self, self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
         return self.runmode(self, *args, **kwargs)
+
+def _noeol(text):
+    return text[:re.search(r'[\r\n]*$', text).start()]
+
+def _oneline(text):
+    l, = text.splitlines()
+    return l
 
 def _of(program, *args, **kwargs):
     return type(program)(*args, **kwargs)

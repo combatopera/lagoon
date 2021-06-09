@@ -337,4 +337,5 @@ class TestLagoon(TestCase):
         self.assertEqual('woo', echo.woo[ONELINE]())
         self.assertEqual('woo', echo.woo(stdout = ONELINE))
         self.assertEqual('woo', Program.text(sys.executable)._c[print]('''import sys\nprint('woo', file = sys.stderr)''', stderr = ONELINE))
-        echo[ONELINE]('woo\nyay')
+        with self.assertRaises(ValueError):
+            echo[ONELINE]('woo\nyay')
