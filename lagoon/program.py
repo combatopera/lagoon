@@ -187,7 +187,7 @@ def _bgmode(program, *args, **kwargs):
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
 def _printstyle(program):
-    return _of(program, program.path, program.textmode, program.cwd, program.args, program._mergedkwargs(dict(stdout = None)), program.runmode, program.ttl)
+    return program[partial](stdout = None)
 
 def _teestyle(program):
     return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, _teemode, program.ttl)
