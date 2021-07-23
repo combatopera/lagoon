@@ -21,7 +21,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from keyword import iskeyword
 from pathlib import Path
-import functools, os, re, subprocess, sys
+import functools, os, re, shlex, subprocess, sys
 
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
@@ -166,6 +166,9 @@ class Program:
         if self.ttl:
             return _of(self, self.path, self.textmode, self.cwd, self.args + args, self._mergedkwargs(kwargs), self.runmode, self.ttl - 1)
         return self.runmode(self, *args, **kwargs)
+
+    def __str__(self):
+        return ' '.join(shlex.quote(str(w)) for w in [self.path, *self.args])
 
 def NOEOL(text, trailingnewlines = re.compile(r'[\r\n]*$')):
     return text[:trailingnewlines.search(text).start()]
