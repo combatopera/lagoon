@@ -24,3 +24,4 @@ author = Andrzej Cichocki
 name = lagoon
 requires += diapyr>=18
 upstream devel packages += screen
+buildbot enabled = true
