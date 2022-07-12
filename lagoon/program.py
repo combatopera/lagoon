@@ -21,7 +21,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from keyword import iskeyword
 from pathlib import Path
-import functools, os, re, shlex, subprocess, sys
+import functools, json, os, re, shlex, subprocess, sys
 
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
@@ -132,7 +132,7 @@ class Program:
                 val = kwargs[name]
                 if val == subprocess.PIPE:
                     yield lambda res: getattr(res, name)
-                elif val in {NOEOL, ONELINE}:
+                elif val in {NOEOL, ONELINE, json.loads}:
                     kwargs[name] = subprocess.PIPE
                     yield lambda res: val(getattr(res, name))
             if not kwargs['check']:
@@ -241,6 +241,7 @@ styles = {
     bg: _bgstyle,
     exec: _execstyle,
     functools.partial: _partialstyle,
+    json: _stdoutstyle(json.loads),
     NOEOL: _stdoutstyle(NOEOL),
     ONELINE: _stdoutstyle(ONELINE),
     partial: _partialstyle,

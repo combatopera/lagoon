@@ -346,3 +346,14 @@ class TestLagoon(TestCase):
             echo[ONELINE]._n('woo\nyay')
         with self.assertRaises(ValueError):
             echo[ONELINE]._n()
+
+    def test_json(self):
+        from . import echo
+        from .binary import echo as echob
+        import json
+        self.assertEqual(dict(x = 1), echob[json]._n('{"x": 1}'))
+        self.assertEqual(dict(x = 1), echob[json]('{"x": 1}'))
+        self.assertEqual(b'', echob[json]('{"x": 1}', stderr = subprocess.PIPE).stderr)
+        self.assertEqual(dict(x = 1), echo[json]._n('{"x": 1}'))
+        self.assertEqual(dict(x = 1), echo[json]('{"x": 1}'))
+        self.assertEqual('', echo[json]('{"x": 1}', stderr = subprocess.PIPE).stderr)
