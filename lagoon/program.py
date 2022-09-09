@@ -18,13 +18,12 @@
 from . import binary
 from .util import unmangle
 from collections import defaultdict
-from contextlib import contextmanager
 from diapyr.util import singleton
 from keyword import iskeyword
 from pathlib import Path
-from types import SimpleNamespace
-import functools, json, os, re, shlex, subprocess, sys
+import functools, json, os, re, shlex, subprocess, sys, threading
 
+local = threading.local()
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
 def scan(modulename):
@@ -172,6 +171,24 @@ class Program:
     def __str__(self):
         return ' '.join(shlex.quote(str(w)) for w in [self.path, *self.args])
 
+    def __enter__(self):
+        cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
+        check = kwargs.pop('check')
+        process = subprocess.Popen(cmd, **kwargs)
+        try:
+            stack = local.stack
+        except AttributeError:
+            local.stack = stack = []
+        stack.append([cmd, check, process])
+        return xform(process)
+
+    def __exit__(self, *exc_info):
+        cmd, check, process = local.stack.pop()
+        with process:
+            pass
+        if check and process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, cmd)
+
 @singleton
 class NOEOL:
 
@@ -193,21 +210,6 @@ def _partialstyle(program):
 def _fgmode(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
     return xform(subprocess.run(cmd, **kwargs))
-
-def _bgstyle(program):
-    return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, _bgmode, program.ttl)
-
-@contextmanager
-def _bgmode(program, *args, **kwargs):
-    cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.wait)
-    check = kwargs.pop('check')
-    process = SimpleNamespace(returncode = None)
-    try:
-        with subprocess.Popen(cmd, **kwargs) as process:
-            yield xform(process)
-    finally:
-        if check and process.returncode:
-            raise subprocess.CalledProcessError(process.returncode, cmd)
 
 def _stdoutstyle(token):
     return lambda program: program[partial](stdout = token)
@@ -242,11 +244,9 @@ def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     precmd = [sys.executable, '-c', 'import os, sys; cwd, *cmd = sys.argv[1:]; os.chdir(cwd); os.execvp(cmd[0], cmd)', cwd, *cmd]
     os.execve(precmd[0], precmd, os.environ if env is None else env)
 
-bg = object()
-partial = object()
+bg = partial = object()
 tee = object()
 styles = {
-    bg: _bgstyle,
     exec: _execstyle,
     functools.partial: _partialstyle,
     json: _stdoutstyle(json.loads),
