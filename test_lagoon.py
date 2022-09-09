@@ -140,19 +140,19 @@ class TestLagoon(TestCase):
         from lagoon import echo, false, true
         with echo[bg]('woo') as stdout:
             self.assertEqual('woo\n', stdout.read())
-        with self.assertRaises(subprocess.CalledProcessError) as cm, false[bg]():
+        with self.assertRaises(subprocess.CalledProcessError) as cm, false:
             pass
         self.assertEqual(1, cm.exception.returncode)
         self.assertEqual([false.path], cm.exception.cmd)
         self.assertIs(None, cm.exception.__context__)
         e = Exception()
-        with self.assertRaises(subprocess.CalledProcessError) as cm, false[bg]():
+        with self.assertRaises(subprocess.CalledProcessError) as cm, false:
             raise e
         self.assertEqual(1, cm.exception.returncode)
         self.assertEqual([false.path], cm.exception.cmd)
         self.assertIs(e, cm.exception.__context__)
         x = Exception()
-        with self.assertRaises(Exception) as cm, true[bg]():
+        with self.assertRaises(Exception) as cm, true:
             raise x
         self.assertIs(x, cm.exception)
         with echo[bg]('woo', check = False) as process:
@@ -212,6 +212,7 @@ class TestLagoon(TestCase):
     def test_bgprint(self):
         self.assertEqual('woo\n', interpret('from lagoon import echo\nfrom lagoon.program import bg\nwith echo[print, bg].woo(): pass'))
         self.assertEqual('woo\n', interpret('from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'))
+        self.assertEqual('woo\n', interpret('from lagoon import echo\nwith echo[print].woo: pass'))
 
     def test_env(self):
         from lagoon import env
