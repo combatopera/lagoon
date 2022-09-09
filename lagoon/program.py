@@ -172,6 +172,7 @@ class Program:
         return ' '.join(shlex.quote(str(w)) for w in [self.path, *self.args])
 
     def __enter__(self):
+        assert not self.ttl
         cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
         check = kwargs.pop('check')
         process = subprocess.Popen(cmd, **kwargs)
