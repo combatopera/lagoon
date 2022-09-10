@@ -177,14 +177,14 @@ class Program:
         check = kwargs.pop('check')
         process = subprocess.Popen(cmd, **kwargs)
         try:
-            stack = local.stack
+            stacks = local.stacks
         except AttributeError:
-            local.stack = stack = []
-        stack.append([cmd, check, process])
+            local.stacks = stacks = defaultdict(list)
+        stacks[self].append([cmd, check, process])
         return xform(process)
 
     def __exit__(self, *exc_info):
-        cmd, check, process = local.stack.pop()
+        cmd, check, process = local.stacks[self].pop()
         with process:
             pass
         if check and process.returncode:
