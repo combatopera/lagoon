@@ -347,6 +347,14 @@ class TestLagoon(TestCase):
         with self.assertRaises(ValueError):
             echo[ONELINE]._n()
 
+    def test_noeolbinary(self):
+        from .binary import echo
+        self.assertEqual(b'woo', echo.woo[NOEOL]())
+
+    def test_onelinebinary(self):
+        from .binary import echo
+        self.assertEqual(b'woo', echo.woo[ONELINE]())
+
     def test_json(self):
         from . import echo
         from .binary import echo as echob

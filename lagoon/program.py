@@ -19,6 +19,7 @@ from . import binary
 from .util import unmangle
 from collections import defaultdict
 from contextlib import contextmanager
+from diapyr.util import singleton
 from keyword import iskeyword
 from pathlib import Path
 import functools, json, os, re, shlex, subprocess, sys
@@ -170,8 +171,13 @@ class Program:
     def __str__(self):
         return ' '.join(shlex.quote(str(w)) for w in [self.path, *self.args])
 
-def NOEOL(text, trailingnewlines = re.compile(r'[\r\n]*$')):
-    return text[:trailingnewlines.search(text).start()]
+@singleton
+class NOEOL:
+
+    t, b = (re.compile(x(r'[\r\n]*$')) for x in [lambda s: s, lambda s: s.encode('ascii')])
+
+    def __call__(self, text):
+        return text[:(self.t if hasattr(text, 'encode') else self.b).search(text).start()]
 
 def ONELINE(text):
     l, = text.splitlines()
