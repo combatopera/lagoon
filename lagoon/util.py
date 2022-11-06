@@ -32,4 +32,4 @@ def atomic(path):
     with TemporaryDirectory(dir = path.parent) as d:
         q = Path(d, f"{path.name}.part")
         yield q
-        q.rename(path)
+        q.rename(path) # XXX: Or replace?
