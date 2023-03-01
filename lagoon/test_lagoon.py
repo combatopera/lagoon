@@ -15,10 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from .program import bg, Program, tee
+from .program import bg, NOEOL, ONELINE, partial, Program, tee
 from contextlib import redirect_stdout
 from io import StringIO
-from lagoon.program import NOEOL, ONELINE, partial
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
