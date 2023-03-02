@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from .program import bg, NOEOL, ONELINE, partial, Program, tee
 from contextlib import redirect_stdout
 from io import StringIO
+from lagoon.program import bg, NOEOL, ONELINE, partial, Program, tee
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
@@ -31,12 +31,12 @@ class TestLagoon(TestCase):
 
     def test_nosuchprogram(self):
         def imp():
-            from . import thisisnotanexecutable
+            from lagoon import thisisnotanexecutable
             del thisisnotanexecutable
         self.assertRaises(ImportError, imp)
 
     def test_false(self):
-        from . import false
+        from lagoon import false
         false(check = False)
         false(check = None)
         false(check = ())
@@ -44,17 +44,17 @@ class TestLagoon(TestCase):
         self.assertRaises(subprocess.CalledProcessError, lambda: false(check = 'x'))
 
     def test_works(self):
-        from .binary import echo
+        from lagoon.binary import echo
         self.assertEqual(b'Hello, world!\n', echo('Hello,', 'world!'))
-        from . import echo
+        from lagoon import echo
         self.assertEqual('Hello, world!\n', echo('Hello,', 'world!'))
 
     def test_stringify(self):
-        from . import echo
+        from lagoon import echo
         self.assertEqual("text binary 100 eranu%suvavu\n" % os.sep, echo('text', b'binary', 100, Path('eranu', 'uvavu')))
 
     def test_cd(self):
-        from . import pwd
+        from lagoon import pwd
         self.assertEqual("%s\n" % Path.cwd(), pwd())
         self.assertEqual("%s\n" % Path.cwd(), pwd(cwd = '.'))
         self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
@@ -72,7 +72,7 @@ class TestLagoon(TestCase):
         self.assertEqual('/tmp\n', pwd(cwd = '/tmp'))
 
     def test_resultobj(self):
-        from . import false, true
+        from lagoon import false, true
         # If we don't check, we need the returncode:
         self.assertEqual(1, false(check = False).returncode)
         self.assertEqual(0, true(check = False).returncode)
@@ -89,7 +89,7 @@ class TestLagoon(TestCase):
         self.assertEqual(None, true[print](stderr = subprocess.STDOUT)) # Both streams printed on stdout.
 
     def test_autostdin(self):
-        from . import diff
+        from lagoon import diff
         text1 = 'Hark, planet!\n'
         text2 = 'xyz\n'
         with TemporaryDirectory() as d:
@@ -133,7 +133,7 @@ class TestLagoon(TestCase):
                 diff(p1, f1, stdin = None) # XXX: Too strict?
 
     def test_bg(self):
-        from . import echo, false, true
+        from lagoon import echo, false, true
         with echo[bg]('woo') as stdout:
             self.assertEqual('woo\n', stdout.read())
         with self.assertRaises(subprocess.CalledProcessError) as cm, false[bg]():
@@ -158,7 +158,7 @@ class TestLagoon(TestCase):
             self.assertEqual(0, wait())
 
     def test_partial(self):
-        from . import expr
+        from lagoon import expr
         test100 = expr[partial](100, check = False)
         cp = test100('=', '100')
         self.assertEqual('1\n', cp.stdout)
@@ -173,30 +173,30 @@ class TestLagoon(TestCase):
             self.assertEqual('1\n', process.stdout.read())
 
     def test_partial2(self):
-        from . import bash
+        from lagoon import bash
         git = bash._c[partial]('git "$@"', 'git')
         self.assertEqual('', git.rev_parse())
 
     def test_altpartial(self):
-        from . import echo
+        from lagoon import echo
         from functools import partial
         woo = echo[partial]('woo')
         self.assertEqual('woo\n', woo())
 
     def test_stylepartial(self):
-        from . import echo
+        from lagoon import echo
         bgecho = echo[bg][partial]('woo')
         with bgecho() as stdout:
             self.assertEqual('woo\n', stdout.read())
 
     def test_stylepartial2(self):
-        from . import echo
+        from lagoon import echo
         bgecho = echo[bg, partial]('woo')
         with bgecho() as stdout:
             self.assertEqual('woo\n', stdout.read())
 
     def test_multipartial(self):
-        from . import echo
+        from lagoon import echo
         self.assertEqual('woo yay houpla\n', echo[partial]('woo')[partial]('yay')('houpla'))
         self.assertEqual('woo yay houpla\n', echo[partial][partial]('woo')('yay')('houpla'))
         self.assertEqual('woo yay houpla\n', echo[partial, partial]('woo')('yay')('houpla'))
@@ -212,7 +212,7 @@ class TestLagoon(TestCase):
         self.assertEqual('woo\n', python._c('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'''))
 
     def test_env(self):
-        from . import env
+        from lagoon import env
         # Consistency with regular subprocess:
         self.assertEqual(_env(os.environ.items()),
                 set(env().splitlines()))
@@ -240,7 +240,7 @@ class TestLagoon(TestCase):
                 env(env = dict({k: None for k in os.environ}, PATH = 'x')).splitlines())
 
     def test_partialenv(self):
-        from . import env
+        from lagoon import env
         partial1 = env[partial](env = dict(PATH = 'x'))
         partial2 = env[partial](env = dict(TestLagoon = 'y'))
         # Not specifying an env means use the partial one:
@@ -279,7 +279,7 @@ class TestLagoon(TestCase):
             self.assertEqual(b'woo\n', Program.binary(t('/bin/echo'))('woo'))
 
     def test_tee(self):
-        from . import echo
+        from lagoon import echo
         f = StringIO()
         with redirect_stdout(f):
             result = echo[tee]('woo')
@@ -287,7 +287,7 @@ class TestLagoon(TestCase):
         self.assertEqual('woo\n', f.getvalue())
 
     def test_stdoutclash(self):
-        from . import echo
+        from lagoon import echo
         with TemporaryFile() as f:
             echo[print]('override', stdout = f)
             echo('hmm', stdout = f)
@@ -314,19 +314,19 @@ class TestLagoon(TestCase):
             self.assertEqual(f"{d}\n", Program.text(sys.executable)._c("from lagoon import pwd\npwd[exec](cwd = %r)" % d))
 
     def test_aux(self):
-        from . import sleep
+        from lagoon import sleep
         with self.assertRaises(subprocess.CalledProcessError) as cm, sleep.inf[bg](stdout = None, aux = 'terminate') as terminate:
             terminate()
         self.assertEqual(-SIGTERM, cm.exception.returncode)
 
     def test_aux2(self):
-        from . import sleep
+        from lagoon import sleep
         with sleep.inf[bg](stdout = None, aux = 'terminate', check = False) as p:
             p.terminate()
             self.assertEqual(-SIGTERM, p.wait())
 
     def test_noeol(self):
-        from . import echo
+        from lagoon import echo
         self.assertEqual('woo', echo._n.woo[NOEOL]())
         self.assertEqual('woo', echo.woo[NOEOL]())
         self.assertEqual('woo', echo.woo(stdout = NOEOL))
@@ -336,7 +336,7 @@ class TestLagoon(TestCase):
         self.assertEqual('woo ', echo._n[NOEOL]('woo \n\r'))
 
     def test_oneline(self):
-        from . import echo
+        from lagoon import echo
         self.assertEqual('woo', echo._n.woo[ONELINE]())
         self.assertEqual('woo', echo.woo[ONELINE]())
         self.assertEqual('woo', echo.woo(stdout = ONELINE))
@@ -347,16 +347,16 @@ class TestLagoon(TestCase):
             echo[ONELINE]._n()
 
     def test_noeolbinary(self):
-        from .binary import echo
+        from lagoon.binary import echo
         self.assertEqual(b'woo', echo.woo[NOEOL]())
 
     def test_onelinebinary(self):
-        from .binary import echo
+        from lagoon.binary import echo
         self.assertEqual(b'woo', echo.woo[ONELINE]())
 
     def test_json(self):
-        from . import echo
-        from .binary import echo as echob
+        from lagoon import echo
+        from lagoon.binary import echo as echob
         import json
         self.assertEqual(dict(x = 1), echob[json]._n('{"x": 1}'))
         self.assertEqual(dict(x = 1), echob[json]('{"x": 1}'))
