@@ -305,14 +305,14 @@ class TestLagoon(TestCase):
             self.assertEqual('hmm\n', fire(Program.text('echo')))
             self.assertEqual('LOCAL hmm\n', fire(Program.text(Path('echo'))))
             def fireexec(programsrc):
-                return Program.text(sys.executable)._c("from lagoon.program import Program\nfrom pathlib import Path\n%s[exec]('hmm', cwd = %r)" % (programsrc, d))
+                return interpret("from lagoon.program import Program\nfrom pathlib import Path\n%s[exec]('hmm', cwd = %r)" % (programsrc, d))
             self.assertEqual('hmm\n', fireexec('''Program.text('echo')'''))
             self.assertEqual('LOCAL hmm\n', fireexec('''Program.text(Path('echo'))'''))
 
     def test_execcwd(self):
         with TemporaryDirectory() as d:
-            self.assertEqual(f"{os.getcwd()}\n", Program.text(sys.executable)._c('from lagoon import pwd\npwd[exec]()'))
-            self.assertEqual(f"{d}\n", Program.text(sys.executable)._c("from lagoon import pwd\npwd[exec](cwd = %r)" % d))
+            self.assertEqual(f"{os.getcwd()}\n", interpret('from lagoon import pwd\npwd[exec]()'))
+            self.assertEqual(f"{d}\n", interpret("from lagoon import pwd\npwd[exec](cwd = %r)" % d))
 
     def test_aux(self):
         from lagoon import sleep
