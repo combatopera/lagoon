@@ -209,8 +209,8 @@ class TestLagoon(TestCase):
         self.assertEqual('woo yay\n', interpret('''from lagoon import echo\nfrom lagoon.program import partial\necho[partial, print]('woo')('yay')'''))
 
     def test_bgprint(self):
-        self.assertEqual('woo\n', interpret('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[print, bg].woo(): pass'''))
-        self.assertEqual('woo\n', interpret('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'''))
+        self.assertEqual('woo\n', interpret('from lagoon import echo\nfrom lagoon.program import bg\nwith echo[print, bg].woo(): pass'))
+        self.assertEqual('woo\n', interpret('from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'))
 
     def test_env(self):
         from lagoon import env
