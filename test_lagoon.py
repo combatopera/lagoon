@@ -16,6 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from contextlib import redirect_stdout
+from diapyr.util import PYTHONPATH
 from io import StringIO
 from lagoon.program import bg, NOEOL, ONELINE, partial, Program, tee
 from pathlib import Path
@@ -23,6 +24,8 @@ from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
 from unittest import TestCase
 import os, stat, subprocess, sys
+
+interpret = Program.text(sys.executable)[partial](env = dict(PYTHONPATH = PYTHONPATH))._c
 
 def _env(items):
     return set(''.join(f"{k}={v}\n" for k, v in items).splitlines())
@@ -202,14 +205,12 @@ class TestLagoon(TestCase):
         self.assertEqual('woo yay houpla\n', echo[partial, partial]('woo')('yay')('houpla'))
 
     def test_partialprint(self):
-        python = Program.text(sys.executable)
-        self.assertEqual('woo yay\n', python._c('''from lagoon import echo\nfrom lagoon.program import partial\necho[print, partial]('woo')('yay')'''))
-        self.assertEqual('woo yay\n', python._c('''from lagoon import echo\nfrom lagoon.program import partial\necho[partial, print]('woo')('yay')'''))
+        self.assertEqual('woo yay\n', interpret('''from lagoon import echo\nfrom lagoon.program import partial\necho[print, partial]('woo')('yay')'''))
+        self.assertEqual('woo yay\n', interpret('''from lagoon import echo\nfrom lagoon.program import partial\necho[partial, print]('woo')('yay')'''))
 
     def test_bgprint(self):
-        python = Program.text(sys.executable)
-        self.assertEqual('woo\n', python._c('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[print, bg].woo(): pass'''))
-        self.assertEqual('woo\n', python._c('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'''))
+        self.assertEqual('woo\n', interpret('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[print, bg].woo(): pass'''))
+        self.assertEqual('woo\n', interpret('''from lagoon import echo\nfrom lagoon.program import bg\nwith echo[bg, print].woo(): pass'''))
 
     def test_env(self):
         from lagoon import env
