@@ -18,9 +18,10 @@
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import re
+import os, re, sys
 
 mangled = re.compile('_.*(__.*[^_]_?)')
+PYTHONPATH = os.pathsep.join(sys.path[1:]) # XXX: Include first entry?
 
 def unmangle(name):
     m = mangled.fullmatch(name)

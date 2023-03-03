@@ -16,9 +16,9 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from contextlib import redirect_stdout
-from diapyr.util import PYTHONPATH
 from io import StringIO
 from lagoon.program import bg, NOEOL, ONELINE, partial, Program, tee
+from lagoon.util import PYTHONPATH
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
