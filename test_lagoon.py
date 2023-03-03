@@ -16,7 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from lagoon.program import bg, NOEOL, ONELINE, partial, Program, tee
 from lagoon.util import PYTHONPATH
@@ -425,3 +425,14 @@ class TestLagoon(TestCase):
     def test_bgstaggered2(self):
         from lagoon import echo
         self._bgstaggered(echo.woo, echo.yay, 'woo\n', 'yay\n')
+
+    def test_bgstaggered3(self):
+        from lagoon import echo
+        stack1 = ExitStack()
+        stack2 = ExitStack()
+        stream1 = stack1.enter_context(echo.woo)
+        stream2 = stack2.enter_context(echo.yay)
+        self.assertEqual('woo\n', stream1.read())
+        stack1.close()
+        self.assertEqual('yay\n', stream2.read())
+        stack2.close()
