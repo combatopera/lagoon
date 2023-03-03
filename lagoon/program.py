@@ -21,8 +21,10 @@ from collections import defaultdict
 from diapyr.util import singleton
 from keyword import iskeyword
 from pathlib import Path
+from threading import local
 import functools, json, os, re, shlex, subprocess, sys
 
+localprograms = defaultdict(local)
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
 def scan(modulename):
@@ -170,18 +172,18 @@ class Program:
     def __str__(self):
         return ' '.join(shlex.quote(str(w)) for w in [self.path, *self.args])
 
-    bginfo = None
-
     def __enter__(self):
         assert not self.ttl
         cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
         check = kwargs.pop('check')
         process = subprocess.Popen(cmd, **kwargs)
-        self.bginfo = self.bginfo, cmd, check, process
+        localprogram = localprograms[self]
+        localprogram.bginfo = getattr(localprogram, 'bginfo', None), cmd, check, process
         return xform(process)
 
     def __exit__(self, *exc_info):
-        self.bginfo, cmd, check, process = self.bginfo
+        localprogram = localprograms[self]
+        localprogram.bginfo, cmd, check, process = localprogram.bginfo
         with process:
             pass
         if check and process.returncode:
