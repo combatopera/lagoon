@@ -24,7 +24,7 @@ from pathlib import Path
 from threading import local
 import functools, json, os, re, shlex, subprocess, sys
 
-localprograms = defaultdict(local)
+localprogram = local()
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
 def scan(modulename):
@@ -177,12 +177,10 @@ class Program:
         cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
         check = kwargs.pop('check')
         process = subprocess.Popen(cmd, **kwargs)
-        localprogram = localprograms[self]
         localprogram.bginfo = getattr(localprogram, 'bginfo', None), cmd, check, process
         return xform(process)
 
     def __exit__(self, *exc_info):
-        localprogram = localprograms[self]
         localprogram.bginfo, cmd, check, process = localprogram.bginfo
         with process:
             pass
