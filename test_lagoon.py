@@ -382,32 +382,46 @@ class TestLagoon(TestCase):
                 pass
             self.assertEqual('woo\n', path.read_text())
 
+    def _bgnested(self, program1, program2, expected1, expected2):
+        with program1 as stream1:
+            with program2 as stream2:
+                self.assertEqual(expected2, stream2.read())
+            self.assertEqual(expected1, stream1.read())
+
     def test_bgnested(self):
         from lagoon import echo
         program = echo.woo
-        with program as outer:
-            with program as inner:
-                self.assertEqual('woo\n', inner.read())
-            self.assertEqual('woo\n', outer.read())
+        self._bgnested(program, program, 'woo\n', 'woo\n')
 
-    def test_bgparallel(self):
+    def test_bgnested2(self):
+        from lagoon import echo
+        self._bgnested(echo.woo, echo.yay, 'woo\n', 'yay\n')
+
+    def _bgstaggered(self, program1, program2, expected1, expected2):
         def task1():
-            with program as f:
+            with program1 as stream:
                 running1.set()
                 running2.wait()
-                return f.read()
+                return stream.read()
         def task2():
             running1.wait()
-            with program as f:
+            with program2 as stream:
                 running2.set()
-                f1.result()
-                return f.read()
-        from lagoon import echo
-        program = echo.woo
+                future1.result()
+                return stream.read()
         running1 = Event()
         running2 = Event()
         with ThreadPoolExecutor() as e:
-            f1 = e.submit(task1)
-            f2 = e.submit(task2)
-            self.assertEqual('woo\n', f1.result())
-            self.assertEqual('woo\n', f2.result())
+            future1 = e.submit(task1)
+            future2 = e.submit(task2)
+            self.assertEqual(expected1, future1.result())
+            self.assertEqual(expected2, future2.result())
+
+    def test_bgstaggered(self):
+        from lagoon import echo
+        program = echo.woo
+        self._bgstaggered(program, program, 'woo\n', 'woo\n')
+
+    def test_bgstaggered2(self):
+        from lagoon import echo
+        self._bgstaggered(echo.woo, echo.yay, 'woo\n', 'yay\n')
