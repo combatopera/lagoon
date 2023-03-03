@@ -18,6 +18,7 @@
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import local
 import os, re, sys
 
 mangled = re.compile('_.*(__.*[^_]_?)')
@@ -34,3 +35,22 @@ def atomic(path):
         q = Path(d, f"{path.name}.part")
         yield q
         q.rename(path) # XXX: Or replace?
+
+class threadlocalproperty:
+
+    def __init__(self, default):
+        self.local = local()
+        self.default = default
+
+    def __get__(self, obj, objtype):
+        try:
+            return self.local.lookup[obj]
+        except (AttributeError, KeyError):
+            return self.default
+
+    def __set__(self, obj, value):
+        try:
+            lookup = self.local.lookup
+        except AttributeError:
+            self.local.lookup = lookup = {}
+        lookup[obj] = value

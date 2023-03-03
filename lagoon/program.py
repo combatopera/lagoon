@@ -16,15 +16,13 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import binary
-from .util import unmangle
+from .util import threadlocalproperty, unmangle
 from collections import defaultdict
 from diapyr.util import singleton
 from keyword import iskeyword
 from pathlib import Path
-from threading import local
 import functools, json, os, re, shlex, subprocess, sys
 
-localprogram = local()
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
 
 def scan(modulename):
@@ -39,6 +37,8 @@ def scan(modulename):
     Program._scan(module, binary, programs)
 
 class Program:
+
+    bginfo = threadlocalproperty(None)
 
     @classmethod
     def _importableornone(cls, anyname):
@@ -177,11 +177,11 @@ class Program:
         cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
         check = kwargs.pop('check')
         process = subprocess.Popen(cmd, **kwargs)
-        localprogram.bginfo = getattr(localprogram, 'bginfo', None), cmd, check, process
+        self.bginfo = self.bginfo, cmd, check, process
         return xform(process)
 
     def __exit__(self, *exc_info):
-        localprogram.bginfo, cmd, check, process = localprogram.bginfo
+        self.bginfo, cmd, check, process = self.bginfo
         with process:
             pass
         if check and process.returncode:
