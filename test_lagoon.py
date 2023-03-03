@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stdout
 from io import StringIO
 from lagoon.program import bg, NOEOL, ONELINE, partial, Program, tee
@@ -22,6 +23,7 @@ from lagoon.util import PYTHONPATH
 from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
+from threading import Event
 from unittest import TestCase
 from uuid import uuid4
 import os, stat, subprocess, sys
@@ -379,3 +381,33 @@ class TestLagoon(TestCase):
             with self.assertRaises(AttributeError), interpret[print, bg](f"import time\ntime.sleep(.5)\nwith open({str(path)!r}, 'w') as f: print('woo', file = f)", aux = 'nosuchattr'):
                 pass
             self.assertEqual('woo\n', path.read_text())
+
+    def test_bgnested(self):
+        from lagoon import echo
+        program = echo.woo
+        with program as outer:
+            with program as inner:
+                self.assertEqual('woo\n', inner.read())
+            self.assertEqual('woo\n', outer.read())
+
+    def test_bgparallel(self):
+        def task1():
+            with program as f:
+                running1.set()
+                running2.wait()
+                return f.read()
+        def task2():
+            running1.wait()
+            with program as f:
+                running2.set()
+                f1.result()
+                return f.read()
+        from lagoon import echo
+        program = echo.woo
+        running1 = Event()
+        running2 = Event()
+        with ThreadPoolExecutor() as e:
+            f1 = e.submit(task1)
+            f2 = e.submit(task2)
+            self.assertEqual('woo\n', f1.result())
+            self.assertEqual('woo\n', f2.result())
