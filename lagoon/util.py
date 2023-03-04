@@ -54,3 +54,11 @@ class threadlocalproperty:
         except AttributeError:
             self.local.lookup = lookup = {}
         lookup[obj] = value
+
+@contextmanager
+def onerror(f):
+    try:
+        yield
+    except:
+        f()
+        raise

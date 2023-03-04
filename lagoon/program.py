@@ -16,8 +16,9 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import binary
-from .util import threadlocalproperty, unmangle
+from .util import onerror, threadlocalproperty, unmangle
 from collections import defaultdict
+from contextlib import ExitStack
 from diapyr.util import singleton
 from keyword import iskeyword
 from pathlib import Path
@@ -176,15 +177,16 @@ class Program:
         assert not self.ttl
         cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
         check = kwargs.pop('check')
-        process = subprocess.Popen(cmd, **kwargs)
-        result = xform(process)
-        self.bginfo = self.bginfo, cmd, check, process
-        return result
+        stack = ExitStack()
+        process = stack.enter_context(subprocess.Popen(cmd, **kwargs))
+        with onerror(stack.close):
+            result = xform(process)
+            self.bginfo = self.bginfo, cmd, check, stack, process
+            return result
 
     def __exit__(self, *exc_info):
-        self.bginfo, cmd, check, process = self.bginfo
-        with process:
-            pass
+        self.bginfo, cmd, check, stack, process = self.bginfo
+        stack.close()
         if check and process.returncode:
             raise subprocess.CalledProcessError(process.returncode, cmd)
 
