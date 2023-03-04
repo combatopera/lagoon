@@ -370,3 +370,11 @@ class TestLagoon(TestCase):
     def test_bglaunchfail(self):
         with self.assertRaises(FileNotFoundError), Program.text(str(uuid4()))[print, bg]():
             pass
+
+    def test_bgauxfail(self):
+        'Failure to get aux attr should behave as if it happened in user code, in particular do not leak the process.'
+        with TemporaryDirectory() as tempdir:
+            path = Path(tempdir, 'output')
+            with self.assertRaises(AttributeError), interpret[print, bg](f"import time\ntime.sleep(.5)\nwith open({str(path)!r}, 'w') as f: print('woo', file = f)", aux = 'nosuchattr'):
+                pass
+            self.assertEqual('woo\n', path.read_text())
