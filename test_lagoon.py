@@ -23,6 +23,7 @@ from pathlib import Path
 from signal import SIGTERM
 from tempfile import TemporaryDirectory, TemporaryFile
 from unittest import TestCase
+from uuid import uuid4
 import os, stat, subprocess, sys
 
 interpret = Program.text(sys.executable)[partial](env = dict(PYTHONPATH = PYTHONPATH))._c
@@ -365,3 +366,7 @@ class TestLagoon(TestCase):
         self.assertEqual(dict(x = 1), echo[json]._n('{"x": 1}'))
         self.assertEqual(dict(x = 1), echo[json]('{"x": 1}'))
         self.assertEqual('', echo[json]('{"x": 1}', stderr = subprocess.PIPE).stderr)
+
+    def test_bglaunchfail(self):
+        with self.assertRaises(FileNotFoundError), Program.text(str(uuid4()))[print, bg]():
+            pass
