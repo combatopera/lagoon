@@ -177,8 +177,9 @@ class Program:
         cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
         check = kwargs.pop('check')
         process = subprocess.Popen(cmd, **kwargs)
+        result = xform(process)
         self.bginfo = self.bginfo, cmd, check, process
-        return xform(process)
+        return result
 
     def __exit__(self, *exc_info):
         self.bginfo, cmd, check, process = self.bginfo
