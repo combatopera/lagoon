@@ -22,6 +22,7 @@ from contextlib import contextmanager
 from diapyr.util import singleton
 from keyword import iskeyword
 from pathlib import Path
+from types import SimpleNamespace
 import functools, json, os, re, shlex, subprocess, sys
 
 unimportablechars = re.compile('|'.join(map(re.escape, '+-.[')))
@@ -200,6 +201,7 @@ def _bgstyle(program):
 def _bgmode(program, *args, **kwargs):
     cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.wait)
     check = kwargs.pop('check')
+    process = SimpleNamespace(returncode = None)
     try:
         with subprocess.Popen(cmd, **kwargs) as process:
             yield xform(process)
