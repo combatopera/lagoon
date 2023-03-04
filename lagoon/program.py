@@ -39,7 +39,7 @@ def scan(modulename):
 
 class Program:
 
-    bginfo = threadlocalproperty(None)
+    bginfo = threadlocalproperty(lambda: None)
 
     @classmethod
     def _importableornone(cls, anyname):

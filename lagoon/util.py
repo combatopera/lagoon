@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import defaultdict
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -38,22 +39,22 @@ def atomic(path):
 
 class threadlocalproperty:
 
-    def __init__(self, default):
+    def __init__(self, defaultfactory):
         self.local = local()
-        self.default = default
+        self.defaultfactory = defaultfactory
+
+    def _lookup(self):
+        try:
+            return self.local.lookup
+        except AttributeError:
+            self.local.lookup = lookup = defaultdict(self.defaultfactory)
+            return lookup
 
     def __get__(self, obj, objtype):
-        try:
-            return self.local.lookup[obj]
-        except (AttributeError, KeyError):
-            return self.default
+        return self._lookup()[obj]
 
     def __set__(self, obj, value):
-        try:
-            lookup = self.local.lookup
-        except AttributeError:
-            self.local.lookup = lookup = {}
-        lookup[obj] = value
+        self._lookup()[obj] = value
 
 @contextmanager
 def onerror(f):
