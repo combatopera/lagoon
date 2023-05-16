@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from .util import atomic, unmangle
+from .util import atomic, mapcm, unmangle
 from diapyr.util import singleton
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -81,8 +81,7 @@ class TestAtomic(TestCase):
                     self.assertEqual('doc\n', p.read_text())
 
     def test_symlink(self):
-        with TemporaryDirectory() as d:
-            d = Path(d)
+        with mapcm(Path, TemporaryDirectory()) as d:
             target = 'target'
             (d / target).write_text('data')
             link = d / 'link'

@@ -63,3 +63,8 @@ def onerror(f):
     except:
         f()
         raise
+
+@contextmanager
+def mapcm(f, obj):
+    with obj as cm:
+        yield f(cm)
