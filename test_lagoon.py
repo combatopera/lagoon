@@ -436,3 +436,20 @@ class TestLagoon(TestCase):
         stack1.close()
         self.assertEqual('yay\n', stream2.read())
         stack2.close()
+
+    def test_boolcheck(self):
+        from lagoon import false, true
+        false = false[print]
+        true = true[print]
+        self.assertIs(False, false(check = bool))
+        self.assertIs(True, true(check = bool))
+        with false[partial](check = bool) as w:
+            self.assertIs(False, w())
+        with true[partial](check = bool) as w:
+            self.assertIs(True, w())
+        self.assertIs(False, false[bool]())
+        self.assertIs(True, true[bool]())
+        with false[bool] as w:
+            self.assertIs(False, w())
+        with true[bool] as w:
+            self.assertIs(True, w())

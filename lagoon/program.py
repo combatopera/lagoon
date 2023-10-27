@@ -112,7 +112,12 @@ class Program:
     def _transform(self, args, kwargs, checkxform):
         args = self.args + args
         kwargs = self._mergedkwargs(kwargs)
-        kwargs.setdefault('check', True) # XXX: Support a check function?
+        if bool == kwargs.get('check'):
+            kwargs['check'] = False
+            checkxform = functools.partial(checkxform, lambda x: not x)
+        else:
+            kwargs.setdefault('check', True)
+            checkxform = functools.partial(checkxform, lambda x: x)
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
@@ -175,7 +180,7 @@ class Program:
 
     def __enter__(self):
         assert not self.ttl
-        cmd, kwargs, xform = self._transform((), {}, lambda res: res.wait)
+        cmd, kwargs, xform = self._transform((), {}, lambda hmm, res: lambda: hmm(res.wait()))
         check = kwargs.pop('check')
         stack = ExitStack()
         process = stack.enter_context(subprocess.Popen(cmd, **kwargs))
@@ -205,11 +210,14 @@ def ONELINE(text):
 def _of(program, *args, **kwargs):
     return type(program)(*args, **kwargs)
 
+def _boolstyle(program):
+    return program[partial](check = bool)
+
 def _partialstyle(program):
     return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, program.runmode, program.ttl + 1)
 
 def _fgmode(program, *args, **kwargs):
-    cmd, kwargs, xform = program._transform(args, kwargs, lambda res: res.returncode)
+    cmd, kwargs, xform = program._transform(args, kwargs, lambda hmm, res: hmm(res.returncode))
     return xform(subprocess.run(cmd, **kwargs))
 
 def _stdoutstyle(token):
@@ -237,7 +245,7 @@ def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
     keys = kwargs.keys()
     if not keys <= supportedkeys:
         raise Exception("Unsupported keywords: %s" % (keys - supportedkeys))
-    cmd, kwargs, _ = program._transform(args, kwargs, None)
+    cmd, kwargs, _ = program._transform(args, kwargs, lambda: None)
     cwd, env = (kwargs[k] for k in ['cwd', 'env'])
     if cwd is None:
         os.execvpe(cmd[0], cmd, env)
@@ -248,6 +256,7 @@ def _execmode(program, *args, **kwargs): # XXX: Flush stdout (and stderr) first?
 bg = partial = object()
 tee = object()
 styles = {
+    bool: _boolstyle,
     exec: _execstyle,
     functools.partial: _partialstyle,
     json: _stdoutstyle(json.loads),
