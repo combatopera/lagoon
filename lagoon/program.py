@@ -114,10 +114,10 @@ class Program:
         kwargs = self._mergedkwargs(kwargs)
         if bool == kwargs.get('check'):
             kwargs['check'] = False
-            checkxform = functools.partial(checkxform, lambda x: not x)
+            mapcode = lambda rc: not rc
         else:
             kwargs.setdefault('check', True)
-            checkxform = functools.partial(checkxform, lambda x: x)
+            mapcode = lambda rc: rc
         kwargs.setdefault('stdout', subprocess.PIPE)
         kwargs.setdefault('stderr', None)
         kwargs.setdefault('universal_newlines', self.textmode)
@@ -144,7 +144,7 @@ class Program:
                     kwargs[name] = subprocess.PIPE
                     yield lambda res: val(getattr(res, name))
             if not kwargs['check']:
-                yield checkxform
+                yield functools.partial(checkxform, mapcode)
             if kwargs.get('stdin') == subprocess.PIPE:
                 yield lambda res: res.stdin
             for stream in 'stdout', 'stderr':
