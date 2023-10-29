@@ -180,7 +180,7 @@ class Program:
 
     def __enter__(self):
         assert not self.ttl
-        cmd, kwargs, xform = self._transform((), {}, lambda hmm, res: lambda: hmm(res.wait()))
+        cmd, kwargs, xform = self._transform((), {}, lambda mapcode, res: lambda: mapcode(res.wait()))
         check = kwargs.pop('check')
         stack = ExitStack()
         process = stack.enter_context(subprocess.Popen(cmd, **kwargs))
@@ -217,7 +217,7 @@ def _partialstyle(program):
     return _of(program, program.path, program.textmode, program.cwd, program.args, program.kwargs, program.runmode, program.ttl + 1)
 
 def _fgmode(program, *args, **kwargs):
-    cmd, kwargs, xform = program._transform(args, kwargs, lambda hmm, res: hmm(res.returncode))
+    cmd, kwargs, xform = program._transform(args, kwargs, lambda mapcode, res: mapcode(res.returncode))
     return xform(subprocess.run(cmd, **kwargs))
 
 def _stdoutstyle(token):
