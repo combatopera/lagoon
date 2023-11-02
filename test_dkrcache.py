@@ -15,5 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-def runexpensivetask(context, buildargs, task):
-    task()
+from dkrcache import runexpensivetask
+from tempfile import TemporaryDirectory
+from unittest import TestCase
+from uuid import uuid4
+
+class TestDkrCache(TestCase):
+
+    ran = 0
+
+    def test_works(self):
+        def task():
+            self.ran += 1
+        discriminator = uuid4()
+        with TemporaryDirectory() as context:
+            self.assertEqual(0, self.ran)
+            for _ in range(2):
+                runexpensivetask(context, discriminator, task)
+                self.assertEqual(1, self.ran)
