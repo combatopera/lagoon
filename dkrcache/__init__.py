@@ -22,6 +22,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from lagoon import docker
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import logging
+
+log = logging.getLogger(__name__)
 
 def runexpensivetask(context, discriminator, task, port = 41118):
     def httpget():
@@ -29,15 +32,20 @@ def runexpensivetask(context, discriminator, task, port = 41118):
             with TemporaryDirectory() as tempdir:
                 Path(tempdir, 'Dockerfile').write_text(f"""FROM busybox
 ARG discriminator
-RUN wget localhost:{port}
+RUN wget -O - localhost:{port}
 """)
-                docker.build.__network.host[print]('--build-arg', f"discriminator={discriminator}", tempdir)
+                return docker.build.__network.host[print, bool]('--build-arg', f"discriminator={discriminator}", tempdir)
         finally:
             server.shutdown()
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            task()
-            self.send_response(HTTPStatus.OK)
-            self.end_headers()
+            try:
+                task()
+            except:
+                log.exception('Failed:')
+                self.send_error(555, 'Task Failed')
+            else:
+                self.send_response(HTTPStatus.OK)
+                self.end_headers()
     with HTTPServer(('', port), Handler) as server, ThreadPoolExecutor() as e:
-        invokeall([server.serve_forever, e.submit(httpget).result])
+        return invokeall([server.serve_forever, e.submit(httpget).result])[-1]

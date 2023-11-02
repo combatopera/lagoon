@@ -31,5 +31,11 @@ class TestDkrCache(TestCase):
         with TemporaryDirectory() as context:
             self.assertEqual(0, self.ran)
             for _ in range(2):
-                runexpensivetask(context, discriminator, task)
+                self.assertTrue(runexpensivetask(context, discriminator, task))
                 self.assertEqual(1, self.ran)
+
+    def test_failingtask(self):
+        def task():
+            raise Exception('boom')
+        with TemporaryDirectory() as context:
+            self.assertFalse(runexpensivetask(context, uuid4(), task))
