@@ -19,13 +19,18 @@ from concurrent.futures import ThreadPoolExecutor
 from diapyr.util import invokeall
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.request import urlopen
+from lagoon import docker
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 def runexpensivetask(context, discriminator, task, port = 41118):
     def httpget():
         try:
-            with urlopen(f"http://localhost:{port}"):
-                pass
+            with TemporaryDirectory() as tempdir:
+                Path(tempdir, 'Dockerfile').write_text(f"""FROM busybox
+RUN wget localhost:{port}
+""")
+                docker.build.__network.host[print](tempdir)
         finally:
             server.shutdown()
     class Handler(BaseHTTPRequestHandler):
