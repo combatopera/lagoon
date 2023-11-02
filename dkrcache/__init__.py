@@ -28,9 +28,10 @@ def runexpensivetask(context, discriminator, task, port = 41118):
         try:
             with TemporaryDirectory() as tempdir:
                 Path(tempdir, 'Dockerfile').write_text(f"""FROM busybox
+ARG discriminator
 RUN wget localhost:{port}
 """)
-                docker.build.__network.host[print](tempdir)
+                docker.build.__network.host[print]('--build-arg', f"discriminator={discriminator}", tempdir)
         finally:
             server.shutdown()
     class Handler(BaseHTTPRequestHandler):
