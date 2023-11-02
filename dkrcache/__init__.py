@@ -15,5 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from concurrent.futures import ThreadPoolExecutor
+from diapyr.util import invokeall
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.request import urlopen
+
 def runexpensivetask(context, discriminator, task, port = 41118):
-    task()
+    def httpget():
+        try:
+            with urlopen(f"http://localhost:{port}"):
+                pass
+        finally:
+            server.shutdown()
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            task()
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+    with HTTPServer(('', port), Handler) as server, ThreadPoolExecutor() as e:
+        invokeall([server.serve_forever, e.submit(httpget).result])
