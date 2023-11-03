@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from dkrcache import runexpensivetask
+from dkrcache import ExpensiveTask
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from uuid import uuid4
@@ -27,15 +27,15 @@ class TestDkrCache(TestCase):
     def test_works(self):
         def task():
             self.ran += 1
-        discriminator = uuid4()
         with TemporaryDirectory() as context:
+            et = ExpensiveTask(context, uuid4(), task)
             self.assertEqual(0, self.ran)
             for _ in range(2):
-                self.assertTrue(runexpensivetask(context, discriminator, task))
+                self.assertTrue(et.run())
                 self.assertEqual(1, self.ran)
 
     def test_failingtask(self):
         def task():
             raise Exception('boom')
         with TemporaryDirectory() as context:
-            self.assertFalse(runexpensivetask(context, uuid4(), task))
+            self.assertFalse(ExpensiveTask(context, uuid4(), task).run())
