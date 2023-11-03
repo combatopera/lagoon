@@ -27,29 +27,34 @@ import logging, pickle
 
 log = logging.getLogger(__name__)
 
-class Result:
+class GoodResult:
 
-    def __init__(self, value, exception):
+    def __init__(self, value):
         self.value = value
+
+    def get(self):
+        return self.value
+
+class BadResult:
+
+    def __init__(self, exception):
         self.exception = exception
 
     def get(self):
-        if self.exception is not None:
-            raise self.exception
-        return self.value
+        raise self.exception
 
 class ExpensiveTask:
 
-    port = 41118
+    port = 41118 # TODO LATER: Ideally use any available port.
 
     @innerclass
     class Handler(BaseHTTPRequestHandler):
 
         def do_GET(self):
             try:
-                result = Result(self.task(), None)
+                result = GoodResult(self.task())
             except BaseException as e:
-                result = Result(None, e)
+                result = BadResult(e)
             self.send_response(HTTPStatus.OK)
             self.end_headers()
             self.wfile.write(pickle.dumps(result))
