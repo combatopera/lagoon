@@ -19,12 +19,24 @@ from concurrent.futures import ThreadPoolExecutor
 from diapyr.util import innerclass, invokeall
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from lagoon import docker
+from lagoon.binary import docker
+from lagoon.util import mapcm
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import logging
+import logging, pickle
 
 log = logging.getLogger(__name__)
+
+class Result:
+
+    def __init__(self, value, exception):
+        self.value = value
+        self.exception = exception
+
+    def get(self):
+        if self.exception is not None:
+            raise self.exception
+        return self.value
 
 class ExpensiveTask:
 
@@ -35,13 +47,12 @@ class ExpensiveTask:
 
         def do_GET(self):
             try:
-                self.task()
-            except:
-                log.exception('Failed:')
-                self.send_error(555, 'Task Failed')
-            else:
-                self.send_response(HTTPStatus.OK)
-                self.end_headers()
+                result = Result(self.task(), None)
+            except BaseException as e:
+                result = Result(None, e)
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+            self.wfile.write(pickle.dumps(result))
 
     def __init__(self, context, discriminator, task):
         self.context = context
@@ -50,12 +61,15 @@ class ExpensiveTask:
 
     def _httpget(self, server):
         try:
-            with TemporaryDirectory() as tempdir:
-                Path(tempdir, 'Dockerfile').write_text(f"""FROM busybox
+            with mapcm(Path, TemporaryDirectory()) as tempdir:
+                (tempdir / 'Dockerfile').write_text(f"""FROM busybox
 ARG discriminator
-RUN wget -O - localhost:{self.port}
+RUN wget localhost:{self.port}
+CMD cat index.html
 """)
-                return docker.build.__network.host[print, bool]('--build-arg', f"discriminator={self.discriminator}", tempdir)
+                iid = tempdir / 'iid'
+                docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", tempdir)
+                return pickle.loads(docker.run.__rm(iid.read_text())).get()
         finally:
             server.shutdown()
 
