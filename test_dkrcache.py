@@ -22,17 +22,12 @@ from uuid import uuid4
 
 class TestDkrCache(TestCase):
 
-    ran = 0
-
     def test_works(self):
-        def task():
-            self.ran += 1
+        results = [100]
         with TemporaryDirectory() as context:
-            et = ExpensiveTask(context, uuid4(), task)
-            self.assertEqual(0, self.ran)
+            et = ExpensiveTask(context, uuid4(), results.pop)
             for _ in range(2):
                 self.assertTrue(et.run())
-                self.assertEqual(1, self.ran)
 
     def test_failingtask(self):
         def task():
