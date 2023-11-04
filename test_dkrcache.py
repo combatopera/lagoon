@@ -16,6 +16,8 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from dkrcache import ExpensiveTask
+from lagoon.util import mapcm
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from uuid import uuid4
