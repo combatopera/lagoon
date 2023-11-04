@@ -15,12 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
+from concurrent.futures import ThreadPoolExecutor
+from diapyr.util import invokeall
 from dkrcache import ExpensiveTask
 from lagoon.util import mapcm
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from uuid import uuid4
+import errno, time
 
 class TestDkrCache(TestCase):
 
@@ -55,3 +58,10 @@ class TestDkrCache(TestCase):
             for _ in range(2):
                 self.assertEqual(100, et1.run())
                 self.assertEqual(200, et2.run())
+
+    def test_concurrent(self):
+        def task():
+            time.sleep(.5)
+        with TemporaryDirectory() as context, ThreadPoolExecutor() as e, self.assertRaises(OSError) as cm:
+            invokeall([e.submit(ExpensiveTask(context, uuid4(), task).run).result for _ in range(2)])
+        self.assertEqual(errno.EADDRINUSE, cm.exception.errno)
