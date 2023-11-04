@@ -19,7 +19,8 @@ from concurrent.futures import ThreadPoolExecutor
 from diapyr.util import innerclass, invokeall
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from lagoon.binary import docker
+from lagoon.binary import docker, tar
+from lagoon.program import partial
 from lagoon.util import mapcm
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -67,13 +68,14 @@ class ExpensiveTask:
     def _httpget(self, server):
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
-                (tempdir / 'Dockerfile').write_text(f"""FROM busybox
+                (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36
 ARG discriminator
 RUN wget localhost:{self.port}
 CMD cat index.html
 """)
                 iid = tempdir / 'iid'
-                docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", tempdir)
+                with tar.c._z[partial]('-C', tempdir, 'Dockerfile') as f:
+                    docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f)
                 return pickle.loads(docker.run.__rm(iid.read_text())).get()
         finally:
             server.shutdown()
