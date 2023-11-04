@@ -44,7 +44,9 @@ class TestDkrCache(TestCase):
     def test_othercontext(self):
         results = [200, 100]
         discriminator = uuid4()
-        with TemporaryDirectory() as c1, TemporaryDirectory() as c2:
+        with mapcm(Path, TemporaryDirectory()) as c1, mapcm(Path, TemporaryDirectory()) as c2:
+            (c1 / 'src.txt').write_text('woo\n')
+            (c2 / 'src.txt').write_text('yay\n')
             et1 = ExpensiveTask(c1, discriminator, results.pop)
             et2 = ExpensiveTask(c2, discriminator, results.pop)
             for _ in range(2):
