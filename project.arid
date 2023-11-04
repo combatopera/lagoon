@@ -22,6 +22,6 @@ years +=
     2020
 author = Andrzej Cichocki
 name = lagoon
-requires += diapyr>=18
+requires += diapyr>=25
 upstream devel packages += screen
 buildbot enabled = true
