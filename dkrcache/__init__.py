@@ -77,7 +77,7 @@ CMD cat index.html
 """)
                 (tempdir / 'context').symlink_to(self.context)
                 iid = tempdir / 'iid'
-                with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f:
+                with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
                     docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f)
                 return pickle.loads(docker.run.__rm(iid.read_text())).get()
         finally:
