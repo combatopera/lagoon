@@ -65,3 +65,4 @@ class TestDkrCache(TestCase):
         with TemporaryDirectory() as context, ThreadPoolExecutor() as e, self.assertRaises(OSError) as cm:
             invokeall([e.submit(ExpensiveTask(context, uuid4(), task).run).result for _ in range(2)])
         self.assertEqual(errno.EADDRINUSE, cm.exception.errno)
+        self.assertIs(None, cm.exception.__context__) # One succeeds.
