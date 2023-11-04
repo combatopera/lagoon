@@ -40,3 +40,13 @@ class TestDkrCache(TestCase):
             except Exception as e:
                 self.assertEqual(type(boom), type(e))
                 self.assertEqual(boom.args, e.args)
+
+    def test_othercontext(self):
+        results = [200, 100]
+        discriminator = uuid4()
+        with TemporaryDirectory() as c1, TemporaryDirectory() as c2:
+            et1 = ExpensiveTask(c1, discriminator, results.pop)
+            et2 = ExpensiveTask(c2, discriminator, results.pop)
+            for _ in range(2):
+                self.assertEqual(100, et1.run())
+                self.assertEqual(200, et2.run())
