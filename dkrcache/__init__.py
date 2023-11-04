@@ -69,12 +69,15 @@ class ExpensiveTask:
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
                 (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36
+WORKDIR /io
+COPY context context
 ARG discriminator
 RUN wget localhost:{self.port}
 CMD cat index.html
 """)
+                (tempdir / 'context').symlink_to(self.context)
                 iid = tempdir / 'iid'
-                with tar.c._z[partial]('-C', tempdir, 'Dockerfile') as f:
+                with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f:
                     docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f)
                 return pickle.loads(docker.run.__rm(iid.read_text())).get()
         finally:
