@@ -65,7 +65,7 @@ class ExpensiveTask:
         self.discriminator = discriminator
         self.task = task
 
-    def _httpget(self, server):
+    def _httpget(self, shutdown):
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
                 (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36
@@ -81,8 +81,8 @@ CMD cat index.html
                     docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f)
                 return pickle.loads(docker.run.__rm(iid.read_text())).get()
         finally:
-            server.shutdown()
+            shutdown()
 
     def run(self):
         with HTTPServer(('', self.port), self.Handler) as server, ThreadPoolExecutor() as e:
-            return invokeall([server.serve_forever, e.submit(self._httpget, server).result])[-1]
+            return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
