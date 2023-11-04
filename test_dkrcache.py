@@ -24,6 +24,8 @@ from uuid import uuid4
 
 class TestDkrCache(TestCase):
 
+    class X(Exception): pass
+
     def test_works(self):
         results = [100]
         with TemporaryDirectory() as context:
@@ -34,13 +36,12 @@ class TestDkrCache(TestCase):
     def test_failingtask(self):
         def task():
             raise boom
-        boom = Exception('boom')
+        boom = self.X('boom')
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), task)
             try:
                 et.run()
-            except Exception as e:
-                self.assertEqual(type(boom), type(e))
+            except self.X as e:
                 self.assertEqual(boom.args, e.args)
 
     def test_othercontext(self):
