@@ -74,7 +74,7 @@ class ExpensiveTask:
     def _httpget(self, shutdown):
         def build(*args, **kwargs):
             with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
-                return docker.build.__network.host[print]('--build-arg', f"discriminator={self.discriminator}", '--build-arg', f"port={self.port}", f, *args, **kwargs)
+                return docker.build.__network.host.__quiet[print]('--build-arg', f"discriminator={self.discriminator}", '--build-arg', f"port={self.port}", f, *args, **kwargs)
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
                 (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile.dkr'))
