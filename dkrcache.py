@@ -56,7 +56,11 @@ class ExpensiveTask:
             self.send_response(HTTPStatus.SERVICE_UNAVAILABLE, 'Cache miss')
             self.end_headers()
 
-    class BaseSaveHandler(BaseHTTPRequestHandler):
+    class SaveHandler(BaseHTTPRequestHandler):
+
+        def __init__(self, result, *args, **kwargs):
+            self.result = result
+            super().__init__(*args, **kwargs)
 
         def do_GET(self):
             self.send_response(HTTPStatus.OK)
@@ -107,8 +111,7 @@ CMD cat index.html
             else:
                 return result.get()
             try:
-                r = GoodResult(self.task())
+                result = GoodResult(self.task())
             except BaseException as x:
-                r = BadResult(x)
-            class SaveHandler(self.BaseSaveHandler): result = r
-            return tryresult(SaveHandler).get()
+                result = BadResult(x)
+            return tryresult(partial(self.SaveHandler, result)).get()
