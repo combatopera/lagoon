@@ -69,20 +69,28 @@ class ExpensiveTask:
         self.task = task
 
     def _httpget(self, shutdown):
+        def build(*args, **kwargs):
+            with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
+                return docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f, *args, **kwargs)
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
-                (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36
+                (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36 AS base
 WORKDIR /io
 COPY context context
 ARG discriminator
+
+FROM base AS task
 RUN wget localhost:{self.port}
+
+FROM task
 CMD cat index.html
 """)
                 (tempdir / 'context').symlink_to(self.context)
                 iid = tempdir / 'iid'
-                with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
-                    if docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f, check = False):
-                        raise CacheMissException
+                build('--target', 'base')
+                if build('--target', 'task', check = False):
+                    raise CacheMissException
+                build()
                 return pickle.loads(docker.run.__rm(iid.read_text()))
         finally:
             shutdown()
