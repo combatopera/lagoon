@@ -52,8 +52,7 @@ class ExpensiveTask:
     class FailHandler(BaseHTTPRequestHandler):
 
         def do_GET(self):
-            self.send_response(HTTPStatus.SERVICE_UNAVAILABLE, 'Cache miss')
-            self.end_headers()
+            self.send_error(HTTPStatus.SERVICE_UNAVAILABLE, 'Cache miss')
 
     class SaveHandler(BaseHTTPRequestHandler):
 
@@ -64,7 +63,7 @@ class ExpensiveTask:
         def do_GET(self):
             self.send_response(HTTPStatus.OK)
             self.end_headers()
-            self.wfile.write(pickle.dumps(self.result))
+            pickle.dump(self.result, self.wfile)
 
     def __init__(self, context, discriminator, task):
         self.context = context
