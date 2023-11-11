@@ -96,7 +96,7 @@ class ExpensiveTask:
                 except OSError as x:
                     if EADDRINUSE != x.errno:
                         raise
-                time.sleep(.1)
+                time.sleep(.5)
         with ThreadPoolExecutor() as e:
             result = tryresult(self.FailHandler)
             if result is not None:
