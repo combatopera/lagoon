@@ -27,3 +27,4 @@ upstream devel packages +=
     docker.io
     screen
 buildbot enabled = true
+resource types += dkr

@@ -77,7 +77,7 @@ class ExpensiveTask:
                 return docker.build.__network.host[print]('--build-arg', f"discriminator={self.discriminator}", '--build-arg', f"port={self.port}", f, *args, **kwargs)
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
-                (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile'))
+                (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile.dkr'))
                 (tempdir / 'context').symlink_to(self.context)
                 build('--target', 'base')
                 if build('--target', 'task', check = bool):
