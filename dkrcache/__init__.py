@@ -24,6 +24,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from lagoon.binary import docker, tar
 from lagoon.util import mapcm
 from pathlib import Path
+from pkg_resources import resource_string
 from tempfile import TemporaryDirectory
 import logging, pickle, time
 
@@ -73,20 +74,10 @@ class ExpensiveTask:
     def _httpget(self, shutdown):
         def build(*args, **kwargs):
             with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
-                return docker.build.__network.host[print]('--build-arg', f"discriminator={self.discriminator}", f, *args, **kwargs)
+                return docker.build.__network.host[print]('--build-arg', f"discriminator={self.discriminator}", '--build-arg', f"port={self.port}", f, *args, **kwargs)
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
-                (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36 AS base
-WORKDIR /io
-COPY context context
-ARG discriminator
-
-FROM base AS task
-RUN wget localhost:{self.port}
-
-FROM task
-CMD cat index.html
-""")
+                (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile'))
                 (tempdir / 'context').symlink_to(self.context)
                 build('--target', 'base')
                 if build('--target', 'task', check = bool):
