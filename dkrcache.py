@@ -75,7 +75,7 @@ class ExpensiveTask:
     def _httpget(self, shutdown):
         def build(*args, **kwargs):
             with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
-                return docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f, *args, **kwargs)
+                return docker.build.__network.host[print]('--build-arg', f"discriminator={self.discriminator}", f, *args, **kwargs)
         try:
             with mapcm(Path, TemporaryDirectory()) as tempdir:
                 (tempdir / 'Dockerfile').write_text(f"""FROM busybox:1.36 AS base
@@ -90,11 +90,11 @@ FROM task
 CMD cat index.html
 """)
                 (tempdir / 'context').symlink_to(self.context)
-                iid = tempdir / 'iid'
                 build('--target', 'base')
                 if build('--target', 'task', check = False):
                     raise CacheMissException
-                build()
+                iid = tempdir / 'iid'
+                build('--iidfile', iid)
                 return pickle.loads(docker.run.__rm(iid.read_text()))
         finally:
             shutdown()
