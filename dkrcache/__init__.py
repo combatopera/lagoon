@@ -53,7 +53,7 @@ class ExpensiveTask:
     class FailHandler(BaseHTTPRequestHandler):
 
         def do_GET(self):
-            self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
+            self.send_response(HTTPStatus.SERVICE_UNAVAILABLE, 'Cache miss')
             self.end_headers()
 
     class BaseSaveHandler(BaseHTTPRequestHandler):
