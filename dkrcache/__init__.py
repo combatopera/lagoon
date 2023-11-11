@@ -16,11 +16,11 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from concurrent.futures import ThreadPoolExecutor
-from diapyr.util import innerclass, invokeall
+from diapyr.util import invokeall
+from functools import partial
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from lagoon.binary import docker, tar
-from lagoon.program import partial
 from lagoon.util import mapcm
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -44,21 +44,24 @@ class BadResult:
     def get(self):
         raise self.exception
 
+class CacheMissException(Exception): pass
+
 class ExpensiveTask:
 
     port = 41118 # TODO LATER: Ideally use any available port.
 
-    @innerclass
-    class Handler(BaseHTTPRequestHandler):
+    class FailHandler(BaseHTTPRequestHandler):
 
         def do_GET(self):
-            try:
-                result = GoodResult(self.task())
-            except BaseException as e:
-                result = BadResult(e)
+            self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
+            self.end_headers()
+
+    class BaseSaveHandler(BaseHTTPRequestHandler):
+
+        def do_GET(self):
             self.send_response(HTTPStatus.OK)
             self.end_headers()
-            self.wfile.write(pickle.dumps(result))
+            self.wfile.write(pickle.dumps(self.result))
 
     def __init__(self, context, discriminator, task):
         self.context = context
@@ -78,11 +81,26 @@ CMD cat index.html
                 (tempdir / 'context').symlink_to(self.context)
                 iid = tempdir / 'iid'
                 with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
-                    docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f)
-                return pickle.loads(docker.run.__rm(iid.read_text())).get()
+                    if docker.build.__network.host[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", f, check = False):
+                        raise CacheMissException
+                return pickle.loads(docker.run.__rm(iid.read_text()))
         finally:
             shutdown()
 
     def run(self):
-        with HTTPServer(('', self.port), self.Handler) as server, ThreadPoolExecutor() as e:
-            return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
+        def tryresult(handlercls):
+            with HTTPServer(('', self.port), handlercls) as server:
+                return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
+        with ThreadPoolExecutor() as e:
+            try:
+                result = tryresult(self.FailHandler)
+            except CacheMissException:
+                pass
+            else:
+                return result.get()
+            try:
+                r = GoodResult(self.task())
+            except BaseException as x:
+                r = BadResult(x)
+            class SaveHandler(self.BaseSaveHandler): result = r
+            return tryresult(SaveHandler).get()
