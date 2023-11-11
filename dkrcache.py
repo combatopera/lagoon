@@ -44,8 +44,6 @@ class BadResult:
     def get(self):
         raise self.exception
 
-class CacheMissException(Exception): pass
-
 class ExpensiveTask:
 
     port = 41118 # TODO LATER: Ideally use any available port.
@@ -91,11 +89,10 @@ CMD cat index.html
 """)
                 (tempdir / 'context').symlink_to(self.context)
                 build('--target', 'base')
-                if build('--target', 'task', check = False):
-                    raise CacheMissException
-                iid = tempdir / 'iid'
-                build('--iidfile', iid)
-                return pickle.loads(docker.run.__rm(iid.read_text()))
+                if build('--target', 'task', check = bool):
+                    iid = tempdir / 'iid'
+                    build('--iidfile', iid)
+                    return pickle.loads(docker.run.__rm(iid.read_text()))
         finally:
             shutdown()
 
@@ -104,11 +101,8 @@ CMD cat index.html
             with HTTPServer(('', self.port), handlercls) as server:
                 return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
         with ThreadPoolExecutor() as e:
-            try:
-                result = tryresult(self.FailHandler)
-            except CacheMissException:
-                pass
-            else:
+            result = tryresult(self.FailHandler)
+            if result is not None:
                 return result.get()
             try:
                 result = GoodResult(self.task())
