@@ -17,6 +17,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from diapyr.util import invokeall
+from errno import EADDRINUSE
 from functools import partial
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -24,7 +25,7 @@ from lagoon.binary import docker, tar
 from lagoon.util import mapcm
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import logging, pickle
+import logging, pickle, time
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class BadResult:
 
 class ExpensiveTask:
 
-    port = 41118 # TODO LATER: Ideally use any available port.
+    port = 41118
 
     class FailHandler(BaseHTTPRequestHandler):
 
@@ -98,8 +99,14 @@ CMD cat index.html
 
     def run(self):
         def tryresult(handlercls):
-            with HTTPServer(('', self.port), handlercls) as server:
-                return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
+            while True:
+                try:
+                    with HTTPServer(('', self.port), handlercls) as server:
+                        return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
+                except OSError as x:
+                    if EADDRINUSE != x.errno:
+                        raise
+                time.sleep(.1)
         with ThreadPoolExecutor() as e:
             result = tryresult(self.FailHandler)
             if result is not None:
