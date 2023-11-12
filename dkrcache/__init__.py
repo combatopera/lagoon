@@ -49,6 +49,7 @@ class BadResult:
 class ExpensiveTask:
 
     port = 41118
+    sleeptime = .5
 
     class FailHandler(BaseHTTPRequestHandler):
 
@@ -95,7 +96,8 @@ class ExpensiveTask:
                 except OSError as x:
                     if EADDRINUSE != x.errno:
                         raise
-                time.sleep(.5)
+                log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
+                time.sleep(self.sleeptime)
         with ThreadPoolExecutor() as e:
             result = tryresult(self.FailHandler)
             if result is not None:
