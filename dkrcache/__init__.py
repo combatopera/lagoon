@@ -84,10 +84,10 @@ class ExpensiveTask:
             build.iid = iid = tempdir / 'iid'
             yield build
 
-    def _retryport(self, f):
+    def _retryport(self, openport):
         while True:
             try:
-                return f()
+                return openport()
             except OSError as e:
                 if EADDRINUSE != e.errno:
                     raise
