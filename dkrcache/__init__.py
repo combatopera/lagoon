@@ -95,14 +95,14 @@ class ExpensiveTask:
             time.sleep(self.sleeptime)
 
     def _imageornone(self, executor, handlercls, build):
-        def task():
+        def bgtask():
             try:
                 if build(check = bool):
                     return build.iid.read_text()
             finally:
                 server.shutdown()
         with HTTPServer(('', self.port), handlercls) as server:
-            return invokeall([server.serve_forever, executor.submit(task).result])[-1]
+            return invokeall([server.serve_forever, executor.submit(bgtask).result])[-1]
 
     def _outcomeornone(self, executor, handlercls):
         with self._builder() as build:
