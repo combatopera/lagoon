@@ -16,6 +16,7 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from diapyr.util import invokeall
 from errno import EADDRINUSE
 from functools import partial
@@ -72,18 +73,23 @@ class ExpensiveTask:
         self.discriminator = discriminator
         self.task = task
 
-    def _httpget(self, shutdown):
+    @contextmanager
+    def _builder(self):
         def build(*args, **kwargs):
             with tar.c._zh[partial]('-C', tempdir, 'Dockerfile', 'context') as f: # XXX: Impact of following all symlinks?
-                return docker.build.__network.host.__quiet[print]('--build-arg', f"discriminator={self.discriminator}", '--build-arg', f"port={self.port}", f, *args, **kwargs)
+                return docker.build.__network.host.__quiet[print]('--iidfile', iid, '--build-arg', f"discriminator={self.discriminator}", '--build-arg', f"port={self.port}", f, *args, **kwargs)
+        with mapcm(Path, TemporaryDirectory()) as tempdir:
+            (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile.dkr'))
+            (tempdir / 'context').symlink_to(self.context)
+            build.iid = iid = tempdir / 'iid'
+            yield build
+
+    def _httpget(self, shutdown):
         try:
-            with mapcm(Path, TemporaryDirectory()) as tempdir:
-                (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile.dkr'))
-                (tempdir / 'context').symlink_to(self.context)
+            with self._builder() as build:
                 build('--target', 'base')
-                iid = tempdir / 'iid'
-                if build('--iidfile', iid, check = bool):
-                    return iid.read_text()
+                if build(check = bool):
+                    return build.iid.read_text()
         finally:
             shutdown()
 
