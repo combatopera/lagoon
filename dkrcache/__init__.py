@@ -47,26 +47,26 @@ class AbruptOutcome:
     def get(self):
         raise self.e
 
+class MissHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        self.send_error(HTTPStatus.SERVICE_UNAVAILABLE, 'Cache miss')
+
+class SaveHandler(BaseHTTPRequestHandler):
+
+    def __init__(self, outcome, *args, **kwargs):
+        self.outcome = outcome
+        super().__init__(*args, **kwargs)
+
+    def do_GET(self):
+        self.send_response(HTTPStatus.OK)
+        self.end_headers()
+        pickle.dump(self.outcome, self.wfile)
+
 class ExpensiveTask:
 
     port = 41118
     sleeptime = .5
-
-    class FailHandler(BaseHTTPRequestHandler):
-
-        def do_GET(self):
-            self.send_error(HTTPStatus.SERVICE_UNAVAILABLE, 'Cache miss')
-
-    class SaveHandler(BaseHTTPRequestHandler):
-
-        def __init__(self, outcome, *args, **kwargs):
-            self.outcome = outcome
-            super().__init__(*args, **kwargs)
-
-        def do_GET(self):
-            self.send_response(HTTPStatus.OK)
-            self.end_headers()
-            pickle.dump(self.outcome, self.wfile)
 
     def __init__(self, context, discriminator, task):
         self.context = context
@@ -113,7 +113,7 @@ class ExpensiveTask:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
         with ThreadPoolExecutor() as executor:
-            outcome = outcomeornone(self.FailHandler)
+            outcome = outcomeornone(MissHandler)
             if outcome is not None:
                 log.info('Cache hit.')
                 return outcome.get()
@@ -121,4 +121,4 @@ class ExpensiveTask:
                 outcome = NormalOutcome(self.task())
             except Exception as e:
                 outcome = AbruptOutcome(e)
-            return outcomeornone(partial(self.SaveHandler, outcome)).get()
+            return outcomeornone(partial(SaveHandler, outcome)).get()
