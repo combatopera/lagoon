@@ -105,15 +105,15 @@ class ExpensiveTask:
             return invokeall([server.serve_forever, executor.submit(task).result])[-1]
 
     def run(self):
-        def tryresult(handlercls):
+        def outcomeornone(handlercls):
             with self._builder() as build:
-                build('--target', 'base')
+                build('--target', 'key')
                 image = self._retryport(partial(self._imageornone, executor, handlercls, build))
             if image is not None:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
         with ThreadPoolExecutor() as executor:
-            outcome = tryresult(self.FailHandler)
+            outcome = outcomeornone(self.FailHandler)
             if outcome is not None:
                 log.info('Cache hit.')
                 return outcome.get()
@@ -121,4 +121,4 @@ class ExpensiveTask:
                 outcome = NormalOutcome(self.task())
             except Exception as e:
                 outcome = AbruptOutcome(e)
-            return tryresult(partial(self.SaveHandler, outcome)).get()
+            return outcomeornone(partial(self.SaveHandler, outcome)).get()
