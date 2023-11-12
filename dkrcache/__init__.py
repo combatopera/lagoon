@@ -83,7 +83,7 @@ class ExpensiveTask:
                 build('--target', 'base')
                 iid = tempdir / 'iid'
                 if build('--iidfile', iid, check = bool):
-                    return pickle.loads(docker.run.__rm(iid.read_text()))
+                    return iid.read_text()
         finally:
             shutdown()
 
@@ -92,12 +92,16 @@ class ExpensiveTask:
             while True:
                 try:
                     with HTTPServer(('', self.port), handlercls) as server:
-                        return invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
+                        image = invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
+                        break
                 except OSError as x:
                     if EADDRINUSE != x.errno:
                         raise
                 log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
                 time.sleep(self.sleeptime)
+            if image is not None:
+                with docker.run.__rm[partial](image) as f:
+                    return pickle.load(f)
         with ThreadPoolExecutor() as e:
             result = tryresult(self.FailHandler)
             if result is not None:
