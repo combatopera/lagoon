@@ -31,7 +31,7 @@ import logging, pickle, time
 
 log = logging.getLogger(__name__)
 
-class GoodResult:
+class NormalOutcome:
 
     def __init__(self, value):
         self.value = value
@@ -39,7 +39,7 @@ class GoodResult:
     def get(self):
         return self.value
 
-class BadResult:
+class AbruptOutcome:
 
     def __init__(self, exception):
         self.exception = exception
@@ -59,14 +59,14 @@ class ExpensiveTask:
 
     class SaveHandler(BaseHTTPRequestHandler):
 
-        def __init__(self, result, *args, **kwargs):
-            self.result = result
+        def __init__(self, outcome, *args, **kwargs):
+            self.outcome = outcome
             super().__init__(*args, **kwargs)
 
         def do_GET(self):
             self.send_response(HTTPStatus.OK)
             self.end_headers()
-            pickle.dump(self.result, self.wfile)
+            pickle.dump(self.outcome, self.wfile)
 
     def __init__(self, context, discriminator, task):
         self.context = context
@@ -113,12 +113,12 @@ class ExpensiveTask:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
         with ThreadPoolExecutor() as executor:
-            result = tryresult(self.FailHandler)
-            if result is not None:
+            outcome = tryresult(self.FailHandler)
+            if outcome is not None:
                 log.info('Cache hit.')
-                return result.get()
+                return outcome.get()
             try:
-                result = GoodResult(self.task())
+                outcome = NormalOutcome(self.task())
             except Exception as e:
-                result = BadResult(e)
-            return tryresult(partial(self.SaveHandler, result)).get()
+                outcome = AbruptOutcome(e)
+            return tryresult(partial(self.SaveHandler, outcome)).get()
