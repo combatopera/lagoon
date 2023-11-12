@@ -95,8 +95,8 @@ class ExpensiveTask:
         while True:
             try:
                 return f()
-            except OSError as x:
-                if EADDRINUSE != x.errno:
+            except OSError as e:
+                if EADDRINUSE != e.errno:
                     raise
             log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
             time.sleep(self.sleeptime)
@@ -105,20 +105,20 @@ class ExpensiveTask:
         def tryresult(handlercls):
             def imageornone():
                 with HTTPServer(('', self.port), handlercls) as server:
-                    return invokeall([server.serve_forever, e.submit(self._httpget, build, server.shutdown).result])[-1]
+                    return invokeall([server.serve_forever, executor.submit(self._httpget, build, server.shutdown).result])[-1]
             with self._builder() as build:
                 build('--target', 'base')
                 image = self._retrying(imageornone)
             if image is not None:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
-        with ThreadPoolExecutor() as e:
+        with ThreadPoolExecutor() as executor:
             result = tryresult(self.FailHandler)
             if result is not None:
                 log.info('Cache hit.')
                 return result.get()
             try:
                 result = GoodResult(self.task())
-            except BaseException as x:
-                result = BadResult(x)
+            except Exception as e:
+                result = BadResult(e)
             return tryresult(partial(self.SaveHandler, result)).get()
