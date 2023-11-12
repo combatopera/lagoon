@@ -84,27 +84,27 @@ class ExpensiveTask:
             build.iid = iid = tempdir / 'iid'
             yield build
 
-    def _httpget(self, shutdown):
+    def _httpget(self, build, shutdown):
         try:
-            with self._builder() as build:
-                build('--target', 'base')
-                if build(check = bool):
-                    return build.iid.read_text()
+            if build(check = bool):
+                return build.iid.read_text()
         finally:
             shutdown()
 
     def run(self):
         def tryresult(handlercls):
-            while True:
-                try:
-                    with HTTPServer(('', self.port), handlercls) as server:
-                        image = invokeall([server.serve_forever, e.submit(self._httpget, server.shutdown).result])[-1]
-                        break
-                except OSError as x:
-                    if EADDRINUSE != x.errno:
-                        raise
-                log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
-                time.sleep(self.sleeptime)
+            with self._builder() as build:
+                build('--target', 'base')
+                while True:
+                    try:
+                        with HTTPServer(('', self.port), handlercls) as server:
+                            image = invokeall([server.serve_forever, e.submit(self._httpget, build, server.shutdown).result])[-1]
+                            break
+                    except OSError as x:
+                        if EADDRINUSE != x.errno:
+                            raise
+                    log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
+                    time.sleep(self.sleeptime)
             if image is not None:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
