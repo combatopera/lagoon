@@ -84,14 +84,14 @@ class ExpensiveTask:
             build.iid = iid = tempdir / 'iid'
             yield build
 
-    def _httpget(self, build, shutdown):
+    def _imageornoneimpl(self, build, shutdown):
         try:
             if build(check = bool):
                 return build.iid.read_text()
         finally:
             shutdown()
 
-    def _retrying(self, f):
+    def _retryport(self, f):
         while True:
             try:
                 return f()
@@ -105,10 +105,10 @@ class ExpensiveTask:
         def tryresult(handlercls):
             def imageornone():
                 with HTTPServer(('', self.port), handlercls) as server:
-                    return invokeall([server.serve_forever, executor.submit(self._httpget, build, server.shutdown).result])[-1]
+                    return invokeall([server.serve_forever, executor.submit(self._imageornoneimpl, build, server.shutdown).result])[-1]
             with self._builder() as build:
                 build('--target', 'base')
-                image = self._retrying(imageornone)
+                image = self._retryport(imageornone)
             if image is not None:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
