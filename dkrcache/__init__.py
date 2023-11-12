@@ -33,19 +33,19 @@ log = logging.getLogger(__name__)
 
 class NormalOutcome:
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, obj):
+        self.obj = obj
 
     def get(self):
-        return self.value
+        return self.obj
 
 class AbruptOutcome:
 
-    def __init__(self, exception):
-        self.exception = exception
+    def __init__(self, e):
+        self.e = e
 
     def get(self):
-        raise self.exception
+        raise self.e
 
 class ExpensiveTask:
 
