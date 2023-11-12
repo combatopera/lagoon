@@ -80,9 +80,8 @@ class ExpensiveTask:
                 (tempdir / 'Dockerfile').write_bytes(resource_string(__name__, 'Dockerfile.dkr'))
                 (tempdir / 'context').symlink_to(self.context)
                 build('--target', 'base')
-                if build('--target', 'task', check = bool):
-                    iid = tempdir / 'iid'
-                    build('--iidfile', iid)
+                iid = tempdir / 'iid'
+                if build('--iidfile', iid, check = bool):
                     return pickle.loads(docker.run.__rm(iid.read_text()))
         finally:
             shutdown()

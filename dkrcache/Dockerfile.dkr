@@ -16,13 +16,11 @@
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
 FROM busybox:1.36 AS base
-WORKDIR /io
+WORKDIR io
+CMD cat index.html
 COPY context context
 ARG discriminator
 
-FROM base AS task
+FROM base
 ARG port
 RUN wget localhost:$port
-
-FROM task
-CMD cat index.html
