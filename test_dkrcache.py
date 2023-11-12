@@ -32,17 +32,19 @@ class TestDkrCache(TestCase):
             et = ExpensiveTask(context, uuid4(), results.pop)
             for _ in range(2):
                 self.assertEqual(100, et.run())
+                self.assertFalse(results)
 
     def test_failingtask(self):
         def task():
-            raise boom
-        boom = self.X('boom')
+            raise exceptions.pop()
+        exceptions = [self.X('boom')]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), task)
-            try:
-                et.run()
-            except self.X as e:
-                self.assertEqual(boom.args, e.args)
+            for _ in range(2):
+                with self.assertRaises(self.X) as cm:
+                    et.run()
+                self.assertEqual(('boom',), cm.exception.args)
+                self.assertFalse(exceptions)
 
     def test_othercontext(self):
         results = [200, 100]
