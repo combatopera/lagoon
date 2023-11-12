@@ -91,20 +91,24 @@ class ExpensiveTask:
         finally:
             shutdown()
 
+    def _retrying(self, f):
+        while True:
+            try:
+                return f()
+            except OSError as x:
+                if EADDRINUSE != x.errno:
+                    raise
+            log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
+            time.sleep(self.sleeptime)
+
     def run(self):
         def tryresult(handlercls):
+            def imageornone():
+                with HTTPServer(('', self.port), handlercls) as server:
+                    return invokeall([server.serve_forever, e.submit(self._httpget, build, server.shutdown).result])[-1]
             with self._builder() as build:
                 build('--target', 'base')
-                while True:
-                    try:
-                        with HTTPServer(('', self.port), handlercls) as server:
-                            image = invokeall([server.serve_forever, e.submit(self._httpget, build, server.shutdown).result])[-1]
-                            break
-                    except OSError as x:
-                        if EADDRINUSE != x.errno:
-                            raise
-                    log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
-                    time.sleep(self.sleeptime)
+                image = self._retrying(imageornone)
             if image is not None:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
