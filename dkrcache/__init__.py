@@ -115,6 +115,7 @@ class ExpensiveTask:
         with ThreadPoolExecutor() as e:
             result = tryresult(self.FailHandler)
             if result is not None:
+                log.info('Cache hit.')
                 return result.get()
             try:
                 result = GoodResult(self.task())

@@ -57,3 +57,4 @@ class TestDkrCache(TestCase):
             for _ in range(2):
                 self.assertEqual(100, et1.run())
                 self.assertEqual(200, et2.run())
+                self.assertFalse(results)
