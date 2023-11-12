@@ -102,7 +102,7 @@ class ExpensiveTask:
             finally:
                 server.shutdown()
         with HTTPServer(('', self.port), handlercls) as server:
-            return invokeall([server.serve_forever, executor.submit(bgtask).result])[-1]
+            return invokeall([server.serve_forever, executor.submit(bgtask).result])[1]
 
     def _outcomeornone(self, executor, handlercls):
         with self._builder() as build:
