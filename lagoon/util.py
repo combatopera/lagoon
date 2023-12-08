@@ -68,3 +68,6 @@ def onerror(f):
 def mapcm(f, obj):
     with obj as cm:
         yield f(cm)
+
+def stripansi(text):
+    return re.sub('\x1b\\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]', '', text) # XXX: Duplicated code?
