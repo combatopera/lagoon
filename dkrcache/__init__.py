@@ -27,7 +27,7 @@ from lagoon.util import mapcm
 from pathlib import Path
 from pkg_resources import resource_string
 from tempfile import TemporaryDirectory
-import logging, pickle, time
+import logging, os, pickle, time
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class ExpensiveTask:
     sleeptime = .5
 
     def __init__(self, context, discriminator, task):
-        self.context = context
+        self.context = os.path.abspath(context)
         self.discriminator = discriminator
         self.task = task
 
