@@ -113,7 +113,7 @@ class ExpensiveTask:
             with docker.run.__rm[partial](image) as f:
                 return pickle.load(f)
 
-    def run(self):
+    def run(self, retryfail = False):
         with ThreadPoolExecutor() as executor:
             outcome = self._outcomeornone(executor, MissHandler, 'Cache hit')
             if outcome is not None:
@@ -121,5 +121,7 @@ class ExpensiveTask:
             try:
                 outcome = NormalOutcome(self.task())
             except Exception as e:
+                if retryfail:
+                    raise
                 outcome = AbruptOutcome(e)
             return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as').get()
