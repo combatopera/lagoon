@@ -104,18 +104,21 @@ class ExpensiveTask:
         with HTTPServer(('', self.port), handlercls) as server:
             return invokeall([server.serve_forever, executor.submit(bgtask).result])[1]
 
-    def _outcomeornone(self, executor, handlercls, imagetitle):
+    def _outcomeornone(self, executor, handlercls, imagetitle, drop):
         with self._builder() as build:
             build('--target', 'key')
             image = self._retryport(partial(self._imageornone, executor, handlercls, build))
         if image is not None:
-            log.info("%s: %s", imagetitle, image)
-            with docker.run.__rm[partial](image) as f:
-                return pickle.load(f)
+            log.info("%s%s: %s", imagetitle, ' and drop' if drop else '', image)
+            if not drop:
+                with docker.run.__rm[partial](image) as f:
+                    return pickle.load(f)
+            docker.rmi[print](image)
+            docker.builder.prune._f[print]()
 
-    def run(self, retryfail = False):
+    def run(self, retryfail = False, force = False):
         with ThreadPoolExecutor() as executor:
-            outcome = self._outcomeornone(executor, MissHandler, 'Cache hit')
+            outcome = self._outcomeornone(executor, MissHandler, 'Cache hit', force)
             if outcome is not None:
                 return outcome.get()
             try:
@@ -124,4 +127,4 @@ class ExpensiveTask:
                 if retryfail:
                     raise
                 outcome = AbruptOutcome(e)
-            return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as').get()
+            return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', False).get()

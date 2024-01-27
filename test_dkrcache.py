@@ -34,6 +34,18 @@ class TestDkrCache(TestCase):
                 self.assertEqual(100, et.run())
                 self.assertFalse(results)
 
+    def test_force(self):
+        results = [200, 100]
+        with TemporaryDirectory() as context:
+            et = ExpensiveTask(context, uuid4(), results.pop)
+            self.assertEqual(100, et.run(force = True))
+            self.assertEqual([200], results)
+            self.assertEqual(100, et.run())
+            self.assertEqual([200], results)
+            self.assertEqual(200, et.run(force = True))
+            self.assertEqual([], results)
+            self.assertEqual(200, et.run())
+
     def test_failingtask(self):
         def task():
             raise exceptions.pop()
