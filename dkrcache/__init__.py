@@ -113,9 +113,10 @@ class ExpensiveTask:
             if not drop:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
+            before = set(_cacheids())
             docker.rmi[print](image)
-            for id in _cacheids():
-                docker.builder.prune._f[print]('--filter', f"id={id}")
+            cacheid, = set(_cacheids()) - before
+            docker.builder.prune._f[print]('--filter', f"id={cacheid}")
 
     def run(self, retryfail = False, force = False):
         with ThreadPoolExecutor() as executor:
