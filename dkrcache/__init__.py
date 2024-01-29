@@ -27,7 +27,7 @@ from lagoon.util import mapcm
 from pathlib import Path
 from pkg_resources import resource_string
 from tempfile import TemporaryDirectory
-import logging, os, pickle, time
+import logging, os, pickle, re, time
 
 log = logging.getLogger(__name__)
 
@@ -114,7 +114,8 @@ class ExpensiveTask:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
             docker.rmi[print](image)
-            docker.builder.prune._f[print]()
+            for id in _cacheids():
+                docker.builder.prune._f[print]('--filter', f"id={id}")
 
     def run(self, retryfail = False, force = False):
         with ThreadPoolExecutor() as executor:
@@ -128,3 +129,9 @@ class ExpensiveTask:
                     raise
                 outcome = AbruptOutcome(e)
             return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', False).get()
+
+def _cacheids():
+    for block in docker.buildx.du.__verbose().decode().split('\n\n'):
+        obj = {k: v for l in block.splitlines() for k, v in [re.split(':\t+', l, 1)]}
+        if 'false' == obj['Shared'] and 'mount / from exec /bin/sh -c wget localhost:$port' == obj['Description']:
+            yield obj['ID']
