@@ -24,7 +24,8 @@ author = Andrzej Cichocki
 name = lagoon
 requires += diapyr>=25
 upstream devel packages +=
-    docker.io
+    docker-buildx-plugin
+    docker-ce-cli
     screen
 buildbot enabled = true
 resource types += dkr
