@@ -115,8 +115,8 @@ class ExpensiveTask:
                     return pickle.load(f)
             before = set(_pruneids())
             docker.rmi[print](image)
-            cacheid, = set(_pruneids()) - before
-            docker.builder.prune._f[print]('--filter', f"id={cacheid}")
+            pruneid, = set(_pruneids()) - before
+            docker.builder.prune._f[print]('--filter', f"id={pruneid}")
 
     def run(self, retryfail = False, force = False):
         with ThreadPoolExecutor() as executor:
