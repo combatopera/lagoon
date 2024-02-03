@@ -113,9 +113,9 @@ class ExpensiveTask:
             if not drop:
                 with docker.run.__rm[partial](image) as f:
                     return pickle.load(f)
-            before = set(_cacheids())
+            before = set(_pruneids())
             docker.rmi[print](image)
-            cacheid, = set(_cacheids()) - before
+            cacheid, = set(_pruneids()) - before
             docker.builder.prune._f[print]('--filter', f"id={cacheid}")
 
     def run(self, retryfail = False, force = False):
@@ -131,7 +131,7 @@ class ExpensiveTask:
                 outcome = AbruptOutcome(e)
             return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', False).get()
 
-def _cacheids():
+def _pruneids():
     for block in docker.buildx.du.__verbose().decode().split('\n\n'):
         obj = {k: v for l in block.splitlines() for k, v in [re.split(':\t+', l, 1)]}
         if 'false' == obj['Shared'] and 'mount / from exec /bin/sh -c wget localhost:$port' == obj['Description']:
