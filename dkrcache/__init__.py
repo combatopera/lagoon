@@ -115,8 +115,10 @@ class ExpensiveTask:
                     return pickle.load(f)
             before = set(_pruneids())
             docker.rmi[print](image)
-            pruneid, = set(_pruneids()) - before
-            docker.builder.prune._f[print]('--filter', f"id={pruneid}")
+            # If our object is not in the set then nothing to be done, another process or user must have pruned it.
+            # The user can docker builder prune at any time, so pruning too much here is not worse than that.
+            for pruneid in set(_pruneids()) - before:
+                docker.builder.prune._f[print]('--filter', f"id={pruneid}") # Idempotent.
 
     def run(self, retryfail = False, force = False):
         with ThreadPoolExecutor() as executor:
