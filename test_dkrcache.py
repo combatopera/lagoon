@@ -42,7 +42,9 @@ class TestDkrCache(TestCase):
             self.assertEqual([200], results)
             self.assertEqual(100, et.run())
             self.assertEqual([200], results)
-            self.assertEqual(200, et.run(force = lambda o: True))
+            self.assertEqual(100, et.run(force = lambda o: 101 == o.get()))
+            self.assertEqual([200], results)
+            self.assertEqual(200, et.run(force = lambda o: 100 == o.get()))
             self.assertEqual([], results)
             self.assertEqual(200, et.run())
 
