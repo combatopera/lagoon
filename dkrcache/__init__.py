@@ -104,15 +104,17 @@ class ExpensiveTask:
         with HTTPServer(('', self.port), handlercls) as server:
             return invokeall([server.serve_forever, executor.submit(bgtask).result])[1]
 
-    def _outcomeornone(self, executor, handlercls, imagetitle, drop):
+    def _outcomeornone(self, executor, handlercls, imagetitle, force):
         with self._builder() as build:
             build('--target', 'key')
             image = self._retryport(partial(self._imageornone, executor, handlercls, build))
         if image is not None:
+            with docker.run.__rm[partial](image) as f:
+                outcome = pickle.load(f)
+            drop = force(outcome)
             log.info("%s%s: %s", imagetitle, ' and drop' if drop else '', image)
             if not drop:
-                with docker.run.__rm[partial](image) as f:
-                    return pickle.load(f)
+                return outcome
             before = set(_pruneids())
             docker.rmi[print](image)
             # If our object is not in the set then nothing to be done, another process or user must have pruned it.
@@ -120,7 +122,7 @@ class ExpensiveTask:
             for pruneid in set(_pruneids()) - before:
                 docker.builder.prune._f[print]('--filter', f"id={pruneid}") # Idempotent.
 
-    def run(self, retryfail = False, force = False):
+    def run(self, retryfail = False, force = lambda o: False):
         with ThreadPoolExecutor() as executor:
             outcome = self._outcomeornone(executor, MissHandler, 'Cache hit', force)
             if outcome is not None:
@@ -131,11 +133,7 @@ class ExpensiveTask:
                 if retryfail:
                     raise
                 outcome = AbruptOutcome(e)
-            return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', False).get()
-
-    def outcomeornone(self):
-        with ThreadPoolExecutor() as executor:
-            return self._outcomeornone(executor, MissHandler, 'Cache hit', False)
+            return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', lambda o: False).get()
 
 def _pruneids():
     for block in docker.buildx.du.__verbose().decode().split('\n\n'):

@@ -30,21 +30,19 @@ class TestDkrCache(TestCase):
         results = [100]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
-            self.assertIsNone(et.outcomeornone())
             for _ in range(2):
                 self.assertEqual(100, et.run())
                 self.assertFalse(results)
-                self.assertEqual(100, et.outcomeornone().get())
 
     def test_force(self):
         results = [200, 100]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
-            self.assertEqual(100, et.run(force = True))
+            self.assertEqual(100, et.run(force = lambda o: True))
             self.assertEqual([200], results)
             self.assertEqual(100, et.run())
             self.assertEqual([200], results)
-            self.assertEqual(200, et.run(force = True))
+            self.assertEqual(200, et.run(force = lambda o: True))
             self.assertEqual([], results)
             self.assertEqual(200, et.run())
 
@@ -54,15 +52,11 @@ class TestDkrCache(TestCase):
         exceptions = [self.X('boom')]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), task)
-            self.assertIsNone(et.outcomeornone())
             for _ in range(2):
                 with self.assertRaises(self.X) as cm:
                     et.run()
                 self.assertEqual(('boom',), cm.exception.args)
                 self.assertFalse(exceptions)
-                with self.assertRaises(self.X) as cm:
-                    et.outcomeornone().get()
-                self.assertEqual(('boom',), cm.exception.args)
 
     def test_failingtasknocache(self):
         def task():
