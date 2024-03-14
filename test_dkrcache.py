@@ -38,7 +38,7 @@ class TestDkrCache(TestCase):
         results = [200, 100]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
-            self.assertEqual(100, et.run(force = lambda o: True))
+            self.assertEqual(100, et.run(force = lambda o: self.fail('Should not be called.')))
             self.assertEqual([200], results)
             self.assertEqual(100, et.run())
             self.assertEqual([200], results)
