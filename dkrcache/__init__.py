@@ -133,6 +133,10 @@ class ExpensiveTask:
                 outcome = AbruptOutcome(e)
             return self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', False).get()
 
+    def outcomeornone(self):
+        with ThreadPoolExecutor() as executor:
+            return self._outcomeornone(executor, MissHandler, 'Cache hit', False)
+
 def _pruneids():
     for block in docker.buildx.du.__verbose().decode().split('\n\n'):
         obj = {k: v for l in block.splitlines() for k, v in [re.split(':\t+', l, 1)]}
