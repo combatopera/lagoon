@@ -104,7 +104,7 @@ class ExpensiveTask:
             log.debug("Port %s unavailable, sleep for %s seconds.", self.port, self.sleeptime)
             time.sleep(self.sleeptime)
 
-    def _imageornone(self, executor, handlercls, build):
+    def _imageornoneimpl(self, executor, handlercls, build):
         def bgtask():
             try:
                 if build(check = bool):
@@ -117,7 +117,7 @@ class ExpensiveTask:
     def _outcomeornone(self, executor, handlercls, imagetitle, force):
         with self._builder() as build:
             build('--target', 'key')
-            image = self._retryport(partial(self._imageornone, executor, handlercls, build))
+            image = self._retryport(partial(self._imageornoneimpl, executor, handlercls, build))
         if image is not None:
             with docker.run.__rm[partial](image) as f:
                 outcome = pickle.load(f)
