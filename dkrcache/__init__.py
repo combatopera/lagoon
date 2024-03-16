@@ -119,13 +119,13 @@ class ExpensiveTask:
             build('--target', 'key')
             return self._retryport(partial(self._imageornoneimpl, executor, handlercls, build))
 
-    def _outcomeornone(self, executor, handlercls, imagetitle, force):
+    def _outcomeornone(self, executor, handlercls, force):
         image = self._imageornone(executor, handlercls)
         if image is not None:
             with docker.run.__rm[partial](image) as f:
                 outcome = pickle.load(f)
             drop = force(outcome)
-            log.info("%s%s: %s", imagetitle, ' and drop' if drop else '', image)
+            log.info("Cache hit%s: %s", ' and drop' if drop else '', image)
             if not drop:
                 return outcome
             before = set(_pruneids())
@@ -137,7 +137,7 @@ class ExpensiveTask:
 
     def run(self, force = NEVER, cache = NORMAL):
         with ThreadPoolExecutor() as executor:
-            outcome = self._outcomeornone(executor, MissHandler, 'Cache hit', force)
+            outcome = self._outcomeornone(executor, MissHandler, force)
             if outcome is not None:
                 return outcome.result()
             try:
