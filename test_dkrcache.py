@@ -35,8 +35,10 @@ class TestDkrCache(TestCase):
     def info(self, *args):
         self.infos.append(args)
 
-    def _popinfo(self):
-        return self.infos.pop(0)
+    def _popinfos(self):
+        v = self.infos[:]
+        del self.infos[:len(v)]
+        return v
 
     def test_works(self):
         results = [100]
@@ -45,10 +47,10 @@ class TestDkrCache(TestCase):
             et.log = self
             self.assertEqual(100, et.run())
             self.assertFalse(results)
-            format, image = self._popinfo()
+            (format, image), = self._popinfos()
             self.assertEqual("Cached as: %s", format)
             self.assertEqual(100, et.run(cache = lambda o: self.fail('Should not be called.')))
-            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
+            self.assertEqual([("Cache hit%s: %s", '', image)], self._popinfos())
 
     def test_nocache(self):
         results = [200, 100]
@@ -70,12 +72,12 @@ class TestDkrCache(TestCase):
                 et.run(cache = ALWAYS)
             self.assertEqual(('boom',), cm.exception.args)
             self.assertFalse(exceptions)
-            format, image = self._popinfo()
+            (format, image), = self._popinfos()
             self.assertEqual("Cached as: %s", format)
             with self.assertRaises(self.X) as cm:
                 et.run(cache = lambda o: self.fail('Should not be called.'))
             self.assertEqual(('boom',), cm.exception.args)
-            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
+            self.assertEqual([("Cache hit%s: %s", '', image)], self._popinfos())
 
     def test_failingtasknocache(self):
         def task():
@@ -110,18 +112,18 @@ class TestDkrCache(TestCase):
             et.log = self
             self.assertEqual(100, et.run(force = lambda o: self.fail('Should not be called.')))
             self.assertEqual([200], results)
-            format, image = self._popinfo()
+            (format, image), = self._popinfos()
             self.assertEqual("Cached as: %s", format)
             self.assertEqual(100, et.run())
             self.assertEqual([200], results)
-            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
+            self.assertEqual([("Cache hit%s: %s", '', image)], self._popinfos())
             self.assertEqual(100, et.run(force = lambda o: 101 == o.result()))
             self.assertEqual([200], results)
-            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
+            self.assertEqual([("Cache hit%s: %s", '', image)], self._popinfos())
             self.assertEqual(200, et.run(force = lambda o: 100 == o.result()))
             self.assertEqual([], results)
-            self.assertEqual(("Cache hit%s: %s", ' and drop', image), self._popinfo())
-            format, image = self._popinfo()
+            drop, (format, image2) = self._popinfos()
+            self.assertEqual(("Cache hit%s: %s", ' and drop', image), drop)
             self.assertEqual("Cached as: %s", format)
             self.assertEqual(200, et.run())
-            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
+            self.assertEqual([("Cache hit%s: %s", '', image2)], self._popinfos())
