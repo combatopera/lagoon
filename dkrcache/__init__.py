@@ -36,23 +36,28 @@ class NormalOutcome:
     def __init__(self, obj):
         self.obj = obj
 
-    def get(self):
+    def result(self):
         return self.obj
+
+    def exception(self):
+        pass
 
 class AbruptOutcome:
 
     def __init__(self, e):
         self.e = e
 
-    def get(self):
+    def result(self):
         raise self.e
 
-def _isnormal(outcome):
-    try:
-        outcome.get()
-        return True
-    except:
-        pass
+    def exception(self):
+        return self.e
+
+def NORMAL(outcome):
+    return outcome.exception() is None
+
+def ABRUPT(outcome):
+    return outcome.exception() is not None
 
 class MissHandler(BaseHTTPRequestHandler):
 
@@ -129,18 +134,18 @@ class ExpensiveTask:
             for pruneid in set(_pruneids()) - before:
                 docker.builder.prune._f[print]('--filter', f"id={pruneid}") # Idempotent.
 
-    def run(self, force = lambda o: False, cache = _isnormal):
+    def run(self, force = lambda o: False, cache = NORMAL):
         with ThreadPoolExecutor() as executor:
             outcome = self._outcomeornone(executor, MissHandler, 'Cache hit', force)
             if outcome is not None:
-                return outcome.get()
+                return outcome.result()
             try:
                 outcome = NormalOutcome(self.task())
             except Exception as e:
                 outcome = AbruptOutcome(e)
             if cache(outcome):
                 outcome = self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', lambda o: False)
-            return outcome.get()
+            return outcome.result()
 
 def _pruneids():
     for block in docker.buildx.du.__verbose().decode().split('\n\n'):
