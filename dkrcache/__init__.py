@@ -75,6 +75,7 @@ class SaveHandler(BaseHTTPRequestHandler):
 
 class ExpensiveTask:
 
+    log = log
     port = 41118
     sleeptime = .5
 
@@ -125,7 +126,7 @@ class ExpensiveTask:
             with docker.run.__rm[partial](image) as f:
                 outcome = pickle.load(f)
             drop = force(outcome)
-            log.info("Cache hit%s: %s", ' and drop' if drop else '', image)
+            self.log.info("Cache hit%s: %s", ' and drop' if drop else '', image)
             if not drop:
                 return outcome
             before = set(_pruneids())
@@ -145,7 +146,7 @@ class ExpensiveTask:
             except Exception as e:
                 outcome = AbruptOutcome(e)
             if cache(outcome):
-                log.info("Cached as: %s", self._imageornone(executor, partial(SaveHandler, outcome)))
+                self.log.info("Cached as: %s", self._imageornone(executor, partial(SaveHandler, outcome)))
             return outcome.result()
 
 def _pruneids():

@@ -26,13 +26,29 @@ class TestDkrCache(TestCase):
 
     class X(Exception): pass
 
+    def setUp(self):
+        self.infos = []
+
+    def tearDown(self):
+        self.assertFalse(self.infos)
+
+    def info(self, *args):
+        self.infos.append(args)
+
+    def _popinfo(self):
+        return self.infos.pop(0)
+
     def test_works(self):
         results = [100]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
-            for _ in range(2):
-                self.assertEqual(100, et.run())
-                self.assertFalse(results)
+            et.log = self
+            self.assertEqual(100, et.run())
+            self.assertFalse(results)
+            format, image = self._popinfo()
+            self.assertEqual("Cached as: %s", format)
+            self.assertEqual(100, et.run(cache = lambda o: self.fail('Should not be called.')))
+            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
 
     def test_nocache(self):
         results = [200, 100]
@@ -48,11 +64,17 @@ class TestDkrCache(TestCase):
         exceptions = [self.X('boom')]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), task)
-            for _ in range(2):
-                with self.assertRaises(self.X) as cm:
-                    et.run(cache = ALWAYS)
-                self.assertEqual(('boom',), cm.exception.args)
-                self.assertFalse(exceptions)
+            et.log = self
+            with self.assertRaises(self.X) as cm:
+                et.run(cache = ALWAYS)
+            self.assertEqual(('boom',), cm.exception.args)
+            self.assertFalse(exceptions)
+            format, image = self._popinfo()
+            self.assertEqual("Cached as: %s", format)
+            with self.assertRaises(self.X) as cm:
+                et.run(cache = lambda o: self.fail('Should not be called.'))
+            self.assertEqual(('boom',), cm.exception.args)
+            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
 
     def test_failingtasknocache(self):
         def task():
