@@ -107,12 +107,21 @@ class TestDkrCache(TestCase):
         results = [200, 100]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
+            et.log = self
             self.assertEqual(100, et.run(force = lambda o: self.fail('Should not be called.')))
             self.assertEqual([200], results)
+            format, image = self._popinfo()
+            self.assertEqual("Cached as: %s", format)
             self.assertEqual(100, et.run())
             self.assertEqual([200], results)
+            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
             self.assertEqual(100, et.run(force = lambda o: 101 == o.result()))
             self.assertEqual([200], results)
+            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
             self.assertEqual(200, et.run(force = lambda o: 100 == o.result()))
             self.assertEqual([], results)
+            self.assertEqual(("Cache hit%s: %s", ' and drop', image), self._popinfo())
+            format, image = self._popinfo()
+            self.assertEqual("Cached as: %s", format)
             self.assertEqual(200, et.run())
+            self.assertEqual(("Cache hit%s: %s", '', image), self._popinfo())
