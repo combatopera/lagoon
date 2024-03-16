@@ -34,6 +34,14 @@ class TestDkrCache(TestCase):
                 self.assertEqual(100, et.run())
                 self.assertFalse(results)
 
+    def test_nocache(self):
+        results = [200, 100]
+        with TemporaryDirectory() as context:
+            et = ExpensiveTask(context, uuid4(), results.pop)
+            for i, x in enumerate([100, 200]):
+                self.assertEqual(x, et.run(cache = lambda o: False))
+                self.assertEqual(1 - i, len(results))
+
     def test_force(self):
         results = [200, 100]
         with TemporaryDirectory() as context:
