@@ -42,20 +42,6 @@ class TestDkrCache(TestCase):
                 self.assertEqual(x, et.run(cache = lambda o: False))
                 self.assertEqual(1 - i, len(results))
 
-    def test_force(self):
-        results = [200, 100]
-        with TemporaryDirectory() as context:
-            et = ExpensiveTask(context, uuid4(), results.pop)
-            self.assertEqual(100, et.run(force = lambda o: self.fail('Should not be called.')))
-            self.assertEqual([200], results)
-            self.assertEqual(100, et.run())
-            self.assertEqual([200], results)
-            self.assertEqual(100, et.run(force = lambda o: 101 == o.get()))
-            self.assertEqual([200], results)
-            self.assertEqual(200, et.run(force = lambda o: 100 == o.get()))
-            self.assertEqual([], results)
-            self.assertEqual(200, et.run())
-
     def test_failingtask(self):
         def task():
             raise exceptions.pop()
@@ -92,3 +78,17 @@ class TestDkrCache(TestCase):
                 self.assertEqual(100, et1.run())
                 self.assertEqual(200, et2.run())
                 self.assertFalse(results)
+
+    def test_force(self):
+        results = [200, 100]
+        with TemporaryDirectory() as context:
+            et = ExpensiveTask(context, uuid4(), results.pop)
+            self.assertEqual(100, et.run(force = lambda o: self.fail('Should not be called.')))
+            self.assertEqual([200], results)
+            self.assertEqual(100, et.run())
+            self.assertEqual([200], results)
+            self.assertEqual(100, et.run(force = lambda o: 101 == o.get()))
+            self.assertEqual([200], results)
+            self.assertEqual(200, et.run(force = lambda o: 100 == o.get()))
+            self.assertEqual([], results)
+            self.assertEqual(200, et.run())
