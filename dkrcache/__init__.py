@@ -30,6 +30,8 @@ from tempfile import TemporaryDirectory
 import logging, os, pickle, re, time
 
 log = logging.getLogger(__name__)
+NORMAL = lambda o: o.exception() is None
+ABRUPT = lambda o: o.exception() is not None
 
 class NormalOutcome:
 
@@ -52,12 +54,6 @@ class AbruptOutcome:
 
     def exception(self):
         return self.e
-
-def NORMAL(outcome):
-    return outcome.exception() is None
-
-def ABRUPT(outcome):
-    return outcome.exception() is not None
 
 class MissHandler(BaseHTTPRequestHandler):
 
