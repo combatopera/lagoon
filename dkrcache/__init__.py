@@ -32,6 +32,8 @@ import logging, os, pickle, re, time
 log = logging.getLogger(__name__)
 NORMAL = lambda o: o.exception() is None
 ABRUPT = lambda o: o.exception() is not None
+ALWAYS = lambda o: True
+NEVER = lambda o: False
 
 class NormalOutcome:
 
@@ -130,7 +132,7 @@ class ExpensiveTask:
             for pruneid in set(_pruneids()) - before:
                 docker.builder.prune._f[print]('--filter', f"id={pruneid}") # Idempotent.
 
-    def run(self, force = lambda o: False, cache = NORMAL):
+    def run(self, force = NEVER, cache = NORMAL):
         with ThreadPoolExecutor() as executor:
             outcome = self._outcomeornone(executor, MissHandler, 'Cache hit', force)
             if outcome is not None:

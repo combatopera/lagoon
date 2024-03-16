@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lagoon.  If not, see <http://www.gnu.org/licenses/>.
 
-from dkrcache import ExpensiveTask
+from dkrcache import ALWAYS, ExpensiveTask, NEVER
 from lagoon.util import mapcm
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -39,7 +39,7 @@ class TestDkrCache(TestCase):
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
             for i, x in enumerate([100, 200]):
-                self.assertEqual(x, et.run(cache = lambda o: False))
+                self.assertEqual(x, et.run(cache = NEVER))
                 self.assertEqual(1 - i, len(results))
 
     def test_failingtask(self):
@@ -50,7 +50,7 @@ class TestDkrCache(TestCase):
             et = ExpensiveTask(context, uuid4(), task)
             for _ in range(2):
                 with self.assertRaises(self.X) as cm:
-                    et.run(cache = lambda o: True)
+                    et.run(cache = ALWAYS)
                 self.assertEqual(('boom',), cm.exception.args)
                 self.assertFalse(exceptions)
 
