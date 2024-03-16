@@ -145,7 +145,7 @@ class ExpensiveTask:
             except Exception as e:
                 outcome = AbruptOutcome(e)
             if cache(outcome):
-                outcome = self._outcomeornone(executor, partial(SaveHandler, outcome), 'Cached as', lambda o: False)
+                log.info("Cached as: %s", self._imageornone(executor, partial(SaveHandler, outcome)))
             return outcome.result()
 
 def _pruneids():
