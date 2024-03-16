@@ -54,6 +54,7 @@ class TestDkrCache(TestCase):
         results = [200, 100]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), results.pop)
+            et.log = self
             for i, x in enumerate([100, 200]):
                 self.assertEqual(x, et.run(cache = NEVER))
                 self.assertEqual(1 - i, len(results))
@@ -82,6 +83,7 @@ class TestDkrCache(TestCase):
         exceptions = [self.X(1), self.X(0)]
         with TemporaryDirectory() as context:
             et = ExpensiveTask(context, uuid4(), task)
+            et.log = self
             for i in range(2):
                 with self.assertRaises(self.X) as cm:
                     et.run()
