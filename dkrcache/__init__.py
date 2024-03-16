@@ -114,10 +114,13 @@ class ExpensiveTask:
         with HTTPServer(('', self.port), handlercls) as server:
             return invokeall([server.serve_forever, executor.submit(bgtask).result])[1]
 
-    def _outcomeornone(self, executor, handlercls, imagetitle, force):
+    def _imageornone(self, executor, handlercls):
         with self._builder() as build:
             build('--target', 'key')
-            image = self._retryport(partial(self._imageornoneimpl, executor, handlercls, build))
+            return self._retryport(partial(self._imageornoneimpl, executor, handlercls, build))
+
+    def _outcomeornone(self, executor, handlercls, imagetitle, force):
+        image = self._imageornone(executor, handlercls)
         if image is not None:
             with docker.run.__rm[partial](image) as f:
                 outcome = pickle.load(f)
