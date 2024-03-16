@@ -62,7 +62,7 @@ class TestDkrCache(TestCase):
             et = ExpensiveTask(context, uuid4(), task)
             for i in range(2):
                 with self.assertRaises(self.X) as cm:
-                    et.run(cache = lambda o: False)
+                    et.run()
                 self.assertEqual((i,), cm.exception.args)
                 self.assertEqual(1 - i, len(exceptions))
 
